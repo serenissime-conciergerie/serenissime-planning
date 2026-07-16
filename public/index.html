@@ -768,8 +768,11 @@ function render(){
 
 
 
-      // Drag & drop sur les cases libres
-      if(free){
+      // Drag & drop sur les cases libres (mais pas si une suggestion ou un ménage
+      // confirmé y est déjà posé : ces cases ont leur propre gestion de clic/glisser
+      // dans le bloc ménage/suggestion ci-dessus, et ne doivent pas être traitées
+      // comme des cases vides cliquables/cibles de dépôt).
+      if(free&&!hS&&!hM){
         c.addEventListener('click',()=>openM(p,d,ds_));
         c.addEventListener('dragover',e=>{
           if(!S.dragData||S.dragData.propId!==p.id)return;
