@@ -725,6 +725,14 @@ function render(){
         c.classList.add('men-c','clickable');
         c.classList.remove('free');
         c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
+        c.draggable=true;
+        c.dataset.dragProp=p.id;c.dataset.dragDate=ds_;c.dataset.dragKey=k;
+        c.addEventListener('dragstart',e=>{
+          S.dragData={propId:p.id,fromDate:ds_,fromKey:k,kind:'confirmed'};
+          e.dataTransfer.effectAllowed='move';
+          e.target.style.opacity='.6';
+        });
+        c.addEventListener('dragend',e=>{e.target.style.opacity='1';S.dragData=null;clearDropHighlights();});
       } else if(hS){
         nS++;
         const sData=S.sug[k];
@@ -734,14 +742,22 @@ function render(){
         c.classList.remove('free');
         c.classList.add('clickable');
         c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
+        c.addEventListener('dblclick',(e)=>{
+          e.stopPropagation();
+          Object.keys(S.sug).filter(sk=>sk.startsWith(p.id+'_')).forEach(sk=>delete S.sug[sk]);
+          S.men[k]={date:ds_,note:'',propName:p.nom,propId:p.id,dur:p.dur};
+          _rxCache=null;render();renderW();renderWA();
+          saveMen();
+          toast(`✓ Ménage confirmé — ${p.nom} · ${fl(ds_)}`);
+        });
         c.draggable=true;
         c.dataset.dragProp=p.id;c.dataset.dragDate=ds_;c.dataset.dragKey=k;
         c.addEventListener('dragstart',e=>{
-          S.dragData={propId:p.id,fromDate:ds_,fromKey:k};
+          S.dragData={propId:p.id,fromDate:ds_,fromKey:k,kind:'sug'};
           e.dataTransfer.effectAllowed='move';
           e.target.style.opacity='.6';
         });
-        c.addEventListener('dragend',e=>{e.target.style.opacity='1';clearDropHighlights();});
+        c.addEventListener('dragend',e=>{e.target.style.opacity='1';S.dragData=null;clearDropHighlights();});
       }
 
 
@@ -760,16 +776,31 @@ function render(){
         c.addEventListener('drop',e=>{
           e.preventDefault();
           if(!S.dragData||S.dragData.propId!==p.id)return;
+          const dd=S.dragData;
           const v=checkDropValidity(p.id,ds_);
-          if(v==='warn'){toast('⚠ Sophie indisponible ce jour');clearDropHighlights();return;}
-          // Déplacer la suggestion
-          const old=S.sug[S.dragData.fromKey];
-          delete S.sug[S.dragData.fromKey];
-          S.sug[k]={...old,date:ds_,oblig:obligDates.has(k)};
-          S.dragData=null;
+          if(v==='warn'){toast('⚠ Date non disponible (Sophie indisponible, jour occupé, ou déjà 2 ménages ce jour)');clearDropHighlights();return;}
           clearDropHighlights();
-          _rxCache=null;render();
-          toast(v==='conf'?`⚠ Suggestion déplacée (conflit groupe géo)`:`✓ Suggestion déplacée au ${fl(ds_)}`);
+          // Laisser le navigateur terminer proprement le cycle natif de drag (dragend)
+          // avant de reconstruire la grille, pour ne pas casser le drag suivant.
+          setTimeout(()=>{
+            if(dd.kind==='confirmed'){
+              const old=S.men[dd.fromKey];
+              delete S.men[dd.fromKey];
+              Object.keys(S.sug).filter(sk=>sk.startsWith(p.id+'_')).forEach(sk=>delete S.sug[sk]);
+              S.men[k]={...old,date:ds_};
+              genSug();
+              _rxCache=null;render();renderW();renderWA();
+              saveMen();
+              toast(v==='conf'?`⚠ Ménage déplacé (conflit groupe géo) — ${p.nom} · ${fl(ds_)}`:`✓ Ménage déplacé au ${fl(ds_)}`);
+            } else {
+              const old=S.sug[dd.fromKey];
+              delete S.sug[dd.fromKey];
+              S.sug[k]={...old,date:ds_,oblig:obligDates.has(k)};
+              _rxCache=null;render();
+              toast(v==='conf'?`⚠ Suggestion déplacée (conflit groupe géo)`:`✓ Suggestion déplacée au ${fl(ds_)}`);
+            }
+          },0);
+          S.dragData=null;
         });
       }
       // Surbrillance en-têtes au survol
