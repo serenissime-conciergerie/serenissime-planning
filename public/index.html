@@ -774,7 +774,7 @@ function render(){
         c.addEventListener('dragover',e=>{
           if(!S.dragData||S.dragData.propId!==p.id)return;
           e.preventDefault();
-          const v=S.dragData.kind==='sug'?'ok':checkDropValidity(p.id,ds_);
+          const v='ok';
           clearDropHighlights();
           c.classList.add('drop-'+v);
         });
@@ -783,9 +783,8 @@ function render(){
           e.preventDefault();
           if(!S.dragData||S.dragData.propId!==p.id)return;
           const dd=S.dragData;
-          // Pour les suggestions (kind 'sug'), aucun critère n'est vérifié : dépôt libre.
-          const v=dd.kind==='sug'?'ok':checkDropValidity(p.id,ds_);
-          if(v==='warn'){toast('⚠ Date non disponible (Sophie indisponible, jour occupé, ou déjà 2 ménages ce jour)');clearDropHighlights();return;}
+          // Aucun critère n'est vérifié pour le glisser-déposer (suggestions et ménages confirmés) : dépôt libre.
+          const v='ok';
           clearDropHighlights();
           // Laisser le navigateur terminer proprement le cycle natif de drag (dragend)
           // avant de reconstruire la grille, pour ne pas casser le drag suivant.
