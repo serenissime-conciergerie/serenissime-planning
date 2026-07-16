@@ -705,7 +705,7 @@ function render(){
             c.appendChild(lbl);
           }
           // Clic sur case checkin ou checkout -> ouvrir popup ménage
-          if(r.iS||r.iE){
+          if((r.iS||r.iE)&&!hM&&!hS){
             c.style.cursor='pointer';
             c.classList.add('clickable');
             c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
