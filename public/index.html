@@ -546,8 +546,29 @@ async function syncH(){
       if(!propId)return null;
       if(EXCLUS.includes(r.status))return null;
       if(r.status==='inquiry'&&!r.confirmation_code)return null;
-      return{propId,guestName:r.guest_name||'Voyageur',guests:r.guests||r.adults||2,startDate:(r.checkIn||'').split('T')[0],endDate:(r.checkOut||'').split('T')[0],status:r.status};
+      return{propId,guestName:r.guest_name||'Voyageur',guests:r.guests||r.adults||2,startDate:(r.checkIn||'').split('T')[0],endDate:(r.checkOut||'').split('T')[0],status:r.status,confirmationCode:r.confirmation_code||null};
     }).filter(r=>r&&r.startDate&&r.endDate);
+
+    // Auto-résoudre les doublons de même confirmation_code (Hostify a renvoyé la même réservation deux fois)
+    const seenByKey={};
+    const autoResolvedIdx=new Set();
+    S.res.forEach((r,idx)=>{
+      const k=r.propId+'_'+r.startDate;
+      if(seenByKey[k]!==undefined){
+        const prevIdx=seenByKey[k];
+        const prev=S.res[prevIdx];
+        if(prev.confirmationCode&&r.confirmationCode&&prev.confirmationCode===r.confirmationCode){
+          autoResolvedIdx.add(prevIdx);
+          seenByKey[k]=idx;
+        }
+      } else {
+        seenByKey[k]=idx;
+      }
+    });
+    if(autoResolvedIdx.size>0){
+      console.log(`${autoResolvedIdx.size} doublon(s) auto-résolu(s) (même confirmation_code Hostify)`);
+      S.res=S.res.filter((r,idx)=>!autoResolvedIdx.has(idx));
+    }
 
     // Détecter les doublons (même propId + startDate)
     const seen={};const doublons=[];
