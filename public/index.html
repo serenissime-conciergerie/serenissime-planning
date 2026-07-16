@@ -741,9 +741,15 @@ function render(){
         else c.classList.add('sug-c');
         c.classList.remove('free');
         c.classList.add('clickable');
-        c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
+        let sugClickTimer=null;
+        c.addEventListener('click',(e)=>{
+          e.stopPropagation();
+          if(sugClickTimer){clearTimeout(sugClickTimer);sugClickTimer=null;return;}
+          sugClickTimer=setTimeout(()=>{sugClickTimer=null;openM(p,d,ds_);},250);
+        });
         c.addEventListener('dblclick',(e)=>{
           e.stopPropagation();
+          if(sugClickTimer){clearTimeout(sugClickTimer);sugClickTimer=null;}
           Object.keys(S.sug).filter(sk=>sk.startsWith(p.id+'_')).forEach(sk=>delete S.sug[sk]);
           S.men[k]={date:ds_,note:'',propName:p.nom,propId:p.id,dur:p.dur};
           _rxCache=null;render();renderW();renderWA();
