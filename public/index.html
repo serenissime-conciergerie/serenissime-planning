@@ -774,7 +774,7 @@ function render(){
         c.addEventListener('dragover',e=>{
           if(!S.dragData||S.dragData.propId!==p.id)return;
           e.preventDefault();
-          const v=checkDropValidity(p.id,ds_);
+          const v=S.dragData.kind==='sug'?'ok':checkDropValidity(p.id,ds_);
           clearDropHighlights();
           c.classList.add('drop-'+v);
         });
@@ -783,7 +783,8 @@ function render(){
           e.preventDefault();
           if(!S.dragData||S.dragData.propId!==p.id)return;
           const dd=S.dragData;
-          const v=checkDropValidity(p.id,ds_);
+          // Pour les suggestions (kind 'sug'), aucun critère n'est vérifié : dépôt libre.
+          const v=dd.kind==='sug'?'ok':checkDropValidity(p.id,ds_);
           if(v==='warn'){toast('⚠ Date non disponible (Sophie indisponible, jour occupé, ou déjà 2 ménages ce jour)');clearDropHighlights();return;}
           clearDropHighlights();
           // Laisser le navigateur terminer proprement le cycle natif de drag (dragend)
