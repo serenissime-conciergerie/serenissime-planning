@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sérénissime Conciergerie — Planning Ménage</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bord:#8D1733;--bord2:#a01d3b;--bord-light:#f5d0d8;
+  --nuit:#17232F;--nuit2:#1e2f3e;--nuit3:#2a4255;
+  --creme:#E7D8B5;--creme2:#f0e8d0;--creme3:#f8f4ea;
+  --res-bg:#B8D4EE;--res-dark:#0d3a6b;
+  --men:#27AE60;--men-bg:#d4eed9;
+  --sug:#F39C12;--sug-bg:#fdebd0;
+  --oblig:#C0392B;--oblig-bg:#fde8e8;
+  --free:#f8f5ee;--we:#f2ede0;
+  --text:#17232F;--text2:#4a6275;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Open Sans',sans-serif}
+body{background:var(--creme3);color:var(--text);min-height:100vh}
+
+/* HEADER */
+header{background:var(--nuit);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+.logo-s{width:46px;height:46px;background:var(--bord);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:600;color:var(--creme);font-family:'Open Sans',sans-serif;flex-shrink:0}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.btn{font-size:.76rem;font-weight:600;padding:6px 13px;border-radius:4px;cursor:pointer;border:none;white-space:nowrap;transition:all .15s}
+.btn-primary{background:var(--bord);color:#fff}.btn-primary:hover{background:var(--bord2)}
+.btn-ghost{background:rgba(255,255,255,.10);color:var(--creme);border:1px solid rgba(231,216,181,.3)}.btn-ghost:hover{background:rgba(255,255,255,.18)}
+.badge-sync{font-size:.68rem;color:rgba(231,216,181,.45);white-space:nowrap}
+
+/* TABS */
+.tabs{background:var(--nuit2);display:flex;border-bottom:1px solid rgba(231,216,181,.1)}
+.tab{padding:10px 18px;font-size:.76rem;font-weight:600;color:rgba(231,216,181,.5);cursor:pointer;border-bottom:3px solid transparent;transition:all .18s;white-space:nowrap}
+.tab:hover{color:var(--creme)}.tab.active{color:var(--creme);border-bottom-color:var(--bord)}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+
+/* STATS */
+#sbar{background:var(--nuit);border-bottom:1px solid rgba(231,216,181,.12);padding:7px 20px;display:none;flex-wrap:wrap;gap:20px;align-items:center}
+.sv{font-size:1.15rem;font-weight:600;color:var(--creme);font-family:'Cormorant Garamond',serif}
+.sl{font-size:.60rem;color:rgba(231,216,181,.5);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
+.sdv{width:1px;height:22px;background:rgba(231,216,181,.18)}
+
+/* TOOLBAR */
+.toolbar{background:#fff;border-bottom:1px solid #e0d8c8;padding:8px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nav-arr{display:flex;gap:3px}
+.ab{width:27px;height:27px;border-radius:4px;border:1px solid #d8ceb8;background:#fff;cursor:pointer;color:var(--nuit);display:flex;align-items:center;justify-content:center;font-size:.95rem;transition:all .15s}
+.ab:hover{background:var(--nuit);color:var(--creme)}
+.mlabel{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--nuit);min-width:155px}
+.tbtn{background:var(--creme2);color:var(--nuit);border:1px solid #d8ceb8;font-size:.71rem;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:'Open Sans',sans-serif}.tbtn:hover{background:var(--creme)}
+.legend{margin-left:auto;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:3px;font-size:.68rem;color:var(--text2)}
+.ld{width:11px;height:11px;border-radius:2px}
+
+/* GRILLE */
+.gw{overflow-x:auto;padding-bottom:40px}
+.gc{display:grid;min-width:max-content}
+.cph{background:var(--nuit);color:var(--creme);font-family:'Cormorant Garamond',serif;font-size:.82rem;padding:8px 14px;position:sticky;left:0;z-index:12;border-right:1px solid rgba(231,216,181,.12);white-space:nowrap}
+.cdh{background:var(--nuit);text-align:center;padding:4px 2px;border-right:1px solid rgba(255,255,255,.05);min-width:52px;transition:background .1s}
+.cdh.hl{background:#8D1733}
+.cpn.hl{background:#ede5d0}
+.cdh .dw{display:block;font-size:.58rem;color:rgba(231,216,181,.45);margin-bottom:1px}
+.cdh .dm{display:block;font-size:.82rem;color:rgba(231,216,181,.75);font-weight:600}
+.cdh.tod .dm{color:#fff;background:var(--bord);border-radius:3px;padding:0 4px;display:inline-block}
+
+.cpn{background:#fff;padding:0 12px;position:sticky;left:0;z-index:8;border-right:2px solid var(--creme);border-bottom:1px solid #ede5d0;height:56px;display:flex;align-items:center;min-width:190px;max-width:190px}
+.pn{font-size:.74rem;font-weight:600;color:var(--nuit);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+
+/* Cellules */
+.cd{min-width:52px;height:56px;position:relative;background:var(--free);box-shadow:1px 0 0 0 #ede5d0,0 1px 0 0 #ede5d0}
+.cd.we{background:var(--we)}
+.cd.tc{background:#fffaf0}
+.cd.free{cursor:pointer}.cd.free:hover{background:#ede5d0}.cd.clickable:hover::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,0.08);pointer-events:none;z-index:2}
+.cd.men-c{background:var(--men)}
+.cd.sug-c{background:var(--sug)}
+.cd.oblig-c{background:var(--oblig)}
+.cd.oblig-col{}
+.ob-flag{position:absolute;top:2px;right:2px;width:6px;height:6px;background:var(--oblig);border-radius:50%;z-index:5}
+.cd.drop-ok{outline:2px solid var(--men);background:var(--men-bg)!important}
+.cd.drop-warn{outline:2px solid var(--oblig);background:var(--oblig-bg)!important}
+.cd.drop-conf{outline:2px solid var(--bord);background:var(--bord-light)!important}
+
+/* BARRES réservation — centrées verticalement, demi-cases */
+.rb{position:absolute;top:4px;bottom:4px;background:var(--res-bg);z-index:3;border:none;pointer-events:none}
+.rb.st{left:60%;right:0;border-radius:4px 0 0 4px}
+.rb.en{left:0;right:60%;border-radius:0 4px 4px 0}
+.rb.mid{left:0;right:0;border-radius:0}
+.rb.both-en{left:0;right:60%;border-radius:0 4px 4px 0}
+.rb.both-st{left:60%;right:0;border-radius:4px 0 0 4px}
+.cd.both-day{background:var(--oblig)}
+.cd.both-day.men-c{background:var(--men)!important}
+
+/* Label nom vacancier — centré, déborde sur les cellules suivantes */
+.rb-label{position:absolute;top:4px;bottom:4px;left:50%;white-space:nowrap;z-index:6;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding-left:6px;pointer-events:none}
+.rn{font-size:.70rem;font-weight:700;color:var(--res-dark);display:block;line-height:1.2;white-space:nowrap}
+.rg{font-size:.62rem;color:#2a5a8e;display:block;line-height:1.2}
+
+/* Badge ménage (cliquable sur case ménage/suggestion) */
+.cd.men-c{cursor:pointer}.cd.sug-c{cursor:pointer}.cd.oblig-c{cursor:pointer}
+
+/* Drag suggestion */
+.sug-drag{position:absolute;inset:0;z-index:4;cursor:grab;display:flex;align-items:center;justify-content:center}
+.sug-drag:active{cursor:grabbing;opacity:.7}
+
+/* VUE ÉQUIPE */
+.wh{background:#fff;border-bottom:1px solid #e0d8c8;padding:8px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wlabel{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--nuit);min-width:240px}
+.wgrid{padding:12px 16px;display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.dc{background:#fff;border-radius:8px;border:1px solid #e0d8c8;overflow:hidden;min-height:90px}
+.dch{padding:7px 10px;font-size:.70rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e0d8c8;color:#666;text-transform:uppercase;letter-spacing:.04em}
+.dch.has-conf{background:var(--men);color:#fff;border-bottom-color:#1e8a4a}
+.dch.has-sug{background:var(--sug);color:#fff;border-bottom-color:#d4880e}
+.dch.has-oblig{background:var(--oblig);color:#fff;border-bottom-color:#a02a1e}
+.dch.we{background:#f2ede0;color:#8a6a2a}
+.tot{font-size:.70rem;font-weight:700;background:rgba(255,255,255,.3);padding:1px 6px;border-radius:3px}
+.mc{margin:7px 8px;border-radius:5px;border-left:3px solid var(--men);padding:6px 8px;background:#f4fbf6}
+.mc.is-sug{border-left-color:var(--sug);background:#fef9f0}
+.mc.is-oblig{border-left-color:var(--oblig);background:#fff5f5}
+.mcn{font-size:.74rem;font-weight:700;color:var(--nuit);line-height:1.3}
+.mcd{font-size:.68rem;color:#666;margin-top:2px}
+.de{padding:12px 10px;font-size:.68rem;color:#bbb;font-style:italic;text-align:center;line-height:1.6}
+
+/* Bouton WhatsApp */
+.btn-wa{background:#25D366;color:#fff;border:none;font-size:.74rem;padding:6px 13px;border-radius:4px;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:5px;margin-left:auto}
+.btn-wa:hover{background:#1ebe5d}
+
+/* Récapitulatif */
+.wsum{margin:0 16px 20px;background:#fff;border-radius:8px;border:1px solid #e0d8c8;overflow:hidden}
+.wst{padding:11px 16px;font-size:.82rem;font-weight:700;color:var(--nuit);border-bottom:1px solid #e0d8c8;background:#f8f5ee}
+.wtbl{width:100%;border-collapse:collapse;font-size:.74rem}
+.wtbl th{text-align:left;padding:6px 12px;background:#f0ead8;color:#6a5a3a;font-weight:700;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e0d8c8}
+.wtbl td{padding:7px 12px;border-bottom:1px solid #f0ead8;color:var(--nuit);vertical-align:top}
+.wtbl tr:last-child td{border-bottom:none}
+.wtbl tr:hover td{background:#faf7f0}
+.day-cell{font-size:.68rem;color:#888;white-space:nowrap;border-right:2px solid #f0ead8}
+.prop-cell{font-weight:700;color:var(--nuit)}
+.dur-cell{font-weight:700;white-space:nowrap}
+.dur-cell.conf{color:var(--men)}
+.dur-cell.sug{color:#c06800}
+.dur-cell.oblig{color:var(--oblig)}
+.lits-cell{font-size:.68rem;color:#444;line-height:1.8}
+.empty-row td{color:#ccc;font-style:italic;font-size:.68rem}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;flex-shrink:0}
+.dot.conf{background:var(--men)}
+.dot.sug{background:var(--sug)}
+.dot.oblig{background:var(--oblig)}
+.dot.none{background:#ddd}
+
+/* MODAL WHATSAPP */
+.wa-bg{display:none;position:fixed;inset:0;background:rgba(23,35,47,.55);z-index:200;align-items:center;justify-content:center}
+.wa-bg.open{display:flex}
+.wa-box{background:#fff;border-radius:10px;padding:22px 24px;min-width:300px;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.wa-box h3{font-size:.88rem;font-weight:700;color:var(--nuit);margin-bottom:3px}
+.wa-box p{font-size:.72rem;color:#888;margin-bottom:14px}
+.wa-choices{display:flex;flex-direction:column;gap:8px}
+.wa-sophie{background:#25D366;color:#fff;border:none;padding:10px 14px;border-radius:6px;font-size:.80rem;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px}
+.wa-sophie:hover{background:#1ebe5d}
+.wa-autre{background:#f0ead8;color:var(--nuit);border:1px solid #d8ceb8;padding:10px 14px;border-radius:6px;font-size:.80rem;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px}
+.wa-autre:hover{background:var(--creme2)}
+.wa-input-row{display:flex;gap:6px;margin-top:4px}
+.wa-num{flex:1;padding:8px 10px;border:1px solid #d8ceb8;border-radius:5px;font-size:.80rem;font-family:'Open Sans',sans-serif;outline:none}
+.wa-num:focus{border-color:var(--nuit3)}
+.wa-send{background:#25D366;color:#fff;border:none;padding:8px 12px;border-radius:5px;font-size:.74rem;font-weight:700;cursor:pointer}
+.wa-cancel{margin-top:10px;background:none;border:none;color:#aaa;font-size:.70rem;cursor:pointer;text-align:center;width:100%;padding:4px}
+.wa-cancel:hover{color:#666}
+
+/* MODAL PLANNING */
+.mo{display:none;position:fixed;inset:0;background:rgba(23,35,47,.55);z-index:100;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.modal{background:#fff;border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.22);padding:22px 24px;min-width:340px;max-width:480px;width:100%;animation:su .18s ease}
+@keyframes su{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal h3{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:600;color:var(--nuit);margin-bottom:3px}
+.msub{font-size:.74rem;color:var(--text2);margin-bottom:12px;padding-bottom:11px;border-bottom:1px solid #ede5d0;line-height:1.7}
+.msub strong{color:var(--text);font-weight:600}
+.oblig-hint{background:#fff0f0;border:1px solid var(--bord-light);color:var(--bord);padding:5px 9px;border-radius:4px;font-size:.70rem;margin-top:5px;font-weight:600}
+.msl{display:block;font-size:.65rem;font-weight:700;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+.dchips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.chip{padding:5px 9px;border-radius:4px;font-size:.72rem;border:1.5px solid #d8ceb8;background:var(--creme2);cursor:pointer;color:var(--text);text-align:center;line-height:1.4;transition:all .12s}
+.chip:hover{border-color:var(--nuit3)}
+.chip.sel{border-color:var(--men);background:var(--men-bg);color:var(--men);font-weight:700}
+.chip.oblig{border-color:var(--oblig);background:#fff0f0;color:var(--oblig)}
+.chip.sug{border-color:var(--sug);background:var(--sug-bg)}
+.chip.unavail{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.mnote{width:100%;padding:6px 9px;border:1px solid #d8ceb8;border-radius:4px;font-family:'Open Sans',sans-serif;font-size:.74rem;resize:vertical;min-height:44px;outline:none}
+.mnote:focus{border-color:var(--nuit3)}
+.mact{display:flex;justify-content:flex-end;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid #ede5d0}
+.bdel{background:#fff0f0;color:var(--bord);border:1px solid var(--bord-light);font-size:.72rem;padding:6px 11px;border-radius:4px;cursor:pointer;font-family:'Open Sans',sans-serif}
+.bconf{background:var(--men);color:#fff;font-size:.72rem;padding:6px 13px;border-radius:4px;cursor:pointer;border:none;font-family:'Open Sans',sans-serif}
+.bcan{background:var(--creme2);color:var(--text);border:1px solid #d8ceb8;font-size:.72rem;padding:6px 11px;border-radius:4px;cursor:pointer;font-family:'Open Sans',sans-serif}
+
+/* LOADING */
+#ls{display:none;position:fixed;inset:0;background:rgba(23,35,47,.7);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#ls.show{display:flex}
+.sp{width:36px;height:36px;border:3px solid rgba(231,216,181,.2);border-top-color:var(--bord);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lm{color:var(--creme);font-size:.80rem;text-align:center;max-width:280px}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--nuit);color:var(--creme);padding:9px 14px;border-radius:5px;font-size:.74rem;box-shadow:0 2px 12px rgba(0,0,0,.2);z-index:400;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+#es{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:10px;color:var(--text2)}
+#es .ei{font-size:2.4rem;opacity:.35}
+#es p{font-size:.80rem;text-align:center;max-width:380px;line-height:1.7}
+#es button{margin-top:10px;background:var(--bord);color:#fff;padding:9px 20px;font-size:.80rem;border-radius:5px;cursor:pointer;border:none;font-family:'Open Sans',sans-serif;font-weight:600}
+</style>
+</head>
+<body>
+<div id="ls"><div class="sp"></div><div class="lm" id="lm">Chargement...</div></div>
+
+<header>
+  <div class="logo-s">S</div>
+  <div class="hdr-right">
+    <span class="badge-sync" id="bsync">Non synchronisé</span>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-ghost" onclick="exportPDF()">📄 PDF</button>
+    <button class="btn btn-primary" onclick="syncH()">↻ Synchroniser Hostify</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPage('p1',this)">📅 Planning</div>
+  <div class="tab" onclick="showPage('p2',this)">👷 Vue Équipe</div>
+</div>
+
+<!-- PAGE PLANNING -->
+<div id="p1" class="page active">
+  <div id="sbar">
+    <div><span class="sv" id="sR">—</span><br><span class="sl">Réservations</span></div><div class="sdv"></div>
+    <div><span class="sv" id="sM">—</span><br><span class="sl">Ménages confirmés</span></div><div class="sdv"></div>
+    <div><span class="sv" id="sS">—</span><br><span class="sl">Suggestions auto</span></div><div class="sdv"></div>
+    <div><span class="sv">13</span><br><span class="sl">Hébergements</span></div>
+  </div>
+  <div class="toolbar">
+    <div class="nav-arr"><button class="ab" onclick="nav(-14)">‹</button><button class="ab" onclick="nav(14)">›</button></div>
+    <div class="mlabel" id="ml">—</div>
+    <button class="tbtn" onclick="goT()">Aujourd'hui</button>
+    <div style="font-size:.68rem;color:var(--oblig);background:#fff0f0;padding:3px 8px;border-radius:10px;border:1px solid var(--bord-light)">🔴 Rouge = ménage obligatoire ce jour</div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:var(--res-bg)"></div>Réservation</div>
+      <div class="li"><div class="ld" style="background:var(--men)"></div>Ménage confirmé</div>
+      <div class="li"><div class="ld" style="background:var(--sug)"></div>Suggestion (glisser)</div>
+      <div class="li"><div class="ld" style="background:var(--oblig)"></div>Obligatoire</div>
+    </div>
+  </div>
+  <div class="gw"><div id="grid" class="gc"></div>
+    <div id="es"><div class="ei">🏡</div><p>Cliquez sur <strong>↻ Synchroniser Hostify</strong> pour charger vos réservations.</p><button onclick="syncH()">↻ Synchroniser</button></div>
+  </div>
+</div>
+
+<!-- PAGE VUE ÉQUIPE -->
+<div id="p2" class="page">
+  <div class="wh">
+    <div class="nav-arr"><button class="ab" onclick="navW(-1)">‹</button><button class="ab" onclick="navW(1)">›</button></div>
+    <div class="wlabel" id="wlabel">—</div>
+    <button class="tbtn" onclick="goWT()">Cette semaine</button>
+    <div style="font-size:.72rem;color:var(--text2)">👷 Sophie Jouetre · Langolvas, Garlan</div>
+    <button class="btn-wa" onclick="openWAModal()">💬 Envoyer à Sophie</button>
+  </div>
+  <div class="wgrid" id="wgrid"></div>
+  <div class="wsum" id="wsum"></div>
+</div>
+
+<!-- MODAL PLANNING -->
+<div class="mo" id="mo">
+  <div class="modal">
+    <h3 id="mT"></h3>
+    <div class="msub" id="mS"></div>
+    <label class="msl">Date d'intervention</label>
+    <div class="dchips" id="mD"></div>
+    <label class="msl">Note pour Sophie</label>
+    <textarea class="mnote" id="mN" placeholder="Instructions, accès, particularités..."></textarea>
+    <div class="mact">
+      <button class="bdel" id="bdel" onclick="delM()" style="display:none">🗑 Supprimer</button>
+      <button class="bcan" onclick="closeM()">Annuler</button>
+      <button class="bconf" onclick="saveM()">✓ Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL WHATSAPP -->
+<div class="wa-bg" id="waModal">
+  <div class="wa-box">
+    <h3>Envoyer sur WhatsApp</h3>
+    <p>Choisissez le destinataire du planning</p>
+    <div class="wa-choices">
+      <button class="wa-sophie" onclick="sendWASophie()">
+        <span style="font-size:18px">💬</span>
+        <div><div>Sophie Jouetre</div><div style="font-size:.65rem;opacity:.8">07 67 38 06 87</div></div>
+      </button>
+      <button class="wa-autre" onclick="showWAInput()">
+        <span style="font-size:18px">✏️</span>
+        <div>Autre destinataire</div>
+      </button>
+      <div id="waInputRow" style="display:none">
+        <div class="wa-input-row">
+          <input class="wa-num" type="tel" id="waNumInput" placeholder="06 xx xx xx xx">
+          <button class="wa-send" onclick="sendWACustom()">Envoyer</button>
+        </div>
+      </div>
+    </div>
+    <button class="wa-cancel" onclick="closeWAModal()">Annuler</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ════ CONFIG ════
+const PROXY='https://hostify-proxy.boulangerjeanjacques16.workers.dev';
+
+// ════ DONNÉES HÉBERGEMENTS ════
+const PROPS=[
+  {id:'alt',nom:'Altitude Marine Property',gr:1,adr:'440 route de Cléder 29250 Sibiril',cap:8,dur:3,l160:0,l140:2,l90:4,sdb:2,lat:48.638,lng:-4.092},
+  {id:'cov',nom:'Convenant Pistic',gr:2,adr:'2 convenant Pistic 22310 Plestin les Grèves',cap:12,dur:4,l160:4,l140:0,l90:4,sdb:2,lat:48.659,lng:-3.638},
+  {id:'ate',nom:"L'Atelier de la Baie",gr:1,adr:'11 bis rue Latouche Tréville 29660 Carantec',cap:4,dur:2,l160:0,l140:0,l90:4,sdb:1,lat:48.665,lng:-3.907},
+  {id:'dun',nom:'La Dune des Amiets',gr:1,adr:'31 bis rue de Lavillo 29233 Cléder',cap:8,dur:4,l160:0,l140:0,l90:8,sdb:1,lat:48.726,lng:-4.114},
+  {id:'sec',nom:'Le Secret de la Baie',gr:1,adr:'11 rue Latouche Tréville 29660 Carantec',cap:6,dur:4,l160:3,l140:0,l90:0,sdb:2,lat:48.665,lng:-3.907},
+  {id:'bal',nom:'Les Balcons de la Thalasso',gr:1,adr:'11 rue Victor Hugo 29680 Roscoff',cap:5,dur:1.5,l160:2,l140:0,l90:1,sdb:1,lat:48.726,lng:-3.987},
+  {id:'pet',nom:'Maison de la Petite Lande',gr:2,adr:'137 Lan Vihan 29630 St Jean du Doigt',cap:4,dur:3,l160:0,l140:2,l90:0,sdb:2,lat:48.692,lng:-3.781},
+  {id:'lat',nom:'Maison Latouche – Vue Mer à Carantec',gr:1,adr:'11 ter Latouche Tréville 29660 Carantec',cap:5,dur:2,l160:1,l140:0,l90:3,sdb:1,lat:48.665,lng:-3.907},
+  {id:'typ',nom:'Ty Parc Hamon',gr:2,adr:'24 route de Parc Hamon 29600 Morlaix',cap:4,dur:3,l160:0,l140:2,l90:0,sdb:1,lat:48.58,lng:-3.826},
+  {id:'vil',nom:'Villa Émeraude de Kérizella',gr:2,adr:'6 Hent Dall Toullar Vilin 22300 Trédrez Locquémeau',cap:10,dur:5,l160:3,l140:0,l90:4,sdb:4,lat:48.7,lng:-3.62},
+  {id:'hor',nom:'Villa Horizon',gr:1,adr:'4 rue de Bir Hakeim 29660 Carantec',cap:10,dur:4,l160:1,l140:2,l90:4,sdb:2,lat:48.672,lng:-3.912},
+  {id:'vaz',nom:"Vue d'Azur à Locquirec",gr:2,adr:'Résidence Kéraudren 29241 Locquirec',cap:4,dur:2,l160:0,l140:1,l90:2,sdb:1,lat:48.701,lng:-3.634},
+  {id:'car',nom:'La Vigie de Kerdanet',gr:1,adr:'38 Avenue de Kerdanet 29660 Carantec',cap:8,dur:4,l160:0,l140:3,l90:2,sdb:2,lat:48.667,lng:-3.910},
+];
+const PM=Object.fromEntries(PROPS.map(p=>[p.id,p]));
+const BLAT=48.5872,BLNG=-3.7876;
+const FERIES=new Set(['2025-01-01','2025-04-18','2025-04-21','2025-05-01','2025-05-08','2025-05-29','2025-06-09','2025-07-14','2025-08-15','2025-11-01','2025-11-11','2025-12-25','2026-01-01','2026-04-03','2026-04-06','2026-05-01','2026-05-08','2026-05-14','2026-05-25','2026-07-14','2026-08-15','2026-11-01','2026-11-11','2026-12-25']);
+
+// ════ CORRESPONDANCE HOSTIFY ════
+const HOSTIFY_ID_MAP={'700062123':'car','700032439':'alt','700035197':'cov','700056906':'ate','700044083':'dun','700056907':'sec','700040621':'bal','700010171':'pet','700056905':'lat','700045306':'typ','700045486':'vil','700010689':'hor','700045491':'vaz'};
+const NICK_MAP=[
+  ['vigie de kerdanet','car'],['kerdanet','car'],
+  ['altitude marine','alt'],['convenant pistic','cov'],['atelier de la baie','ate'],['bay workshop','ate'],
+  ['dune des amiets','dun'],['secret de la baie','sec'],['secret of the bay','sec'],
+  ['balcons de la thalasso','bal'],['petite lande','pet'],
+  ['latouche','lat'],['sea view in carantec','lat'],['ty parc hamon','typ'],
+  ['meuraude','vil'],['kerizella','vil'],['aigue marine','vil'],
+  ['villa horizon','hor'],['azur','vaz'],['locquirec','vaz'],
+];
+function matchByNick(n){if(!n)return null;const s=n.toLowerCase();for(const[k,id]of NICK_MAP)if(s.includes(k))return id;return null;}
+function matchPropId(l){return HOSTIFY_ID_MAP[String(l.id)]||matchByNick(l.nickname)||matchByNick(l.name)||null;}
+
+// ════ DISPONIBILITÉS SOPHIE ════
+function disp(ds){
+  if(ds==='2025-12-25'||ds==='2026-12-25')return{ok:false};
+  const d=new Date(ds+'T00:00:00'),dw=d.getDay(),fe=FERIES.has(ds);
+  if(dw===0)return{ok:true,s:8.5,e:18,pref:false};
+  if(dw===6)return{ok:true,s:8.5,e:18,pref:false};
+  if(fe)return{ok:true,s:8.5,e:18,pref:false};
+  if(dw===1)return{ok:true,s:8.5,e:12,pref:true};
+  if(dw===2)return{ok:true,s:8.5,e:16,pref:true};
+  if(dw===3)return{ok:true,s:8.5,e:18,pref:true};
+  if(dw===4)return{ok:true,s:8.5,e:16,pref:true};
+  if(dw===5)return{ok:true,s:13,e:18,pref:true};
+  return{ok:false};
+}
+function dist(a,b,c,d){const R=6371,dL=((c-a)*Math.PI)/180,dG=((d-b)*Math.PI)/180,x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function traj(a,b,c,d){return Math.round(dist(a,b,c,d)*1.5+5);}
+function hm(h){const hh=Math.floor(h),mm=Math.round((h-hh)*60);return`${String(hh).padStart(2,'0')}h${String(mm).padStart(2,'0')}`;}
+function lits(p){const r=[];if(p.l160>0)r.push(`${p.l160}×160`);if(p.l140>0)r.push(`${p.l140}×140`);if(p.l90>0)r.push(`${p.l90}×90`);return r.join(', ')||'—';}
+
+// ════ ÉTAT ════
+
+const S={start:null,days:35,res:[],men:{},sug:{},wo:0,ww:0,dragData:null};
+const VALID_MEN_KEY=/^(alt|cov|ate|dun|sec|bal|pet|lat|typ|vil|hor|vaz|car)_\d{4}-\d{2}-\d{2}$/;
+async function loadMen(){
+  try{
+    const r=await fetch('/api/men');
+    if(r.ok){
+      const data=await r.json();
+      // Filtrer les clés invalides avant de charger
+      Object.entries(data).forEach(([k,v])=>{
+        if(VALID_MEN_KEY.test(k))S.men[k]=v;
+        else console.warn('Clé invalide ignorée:',k);
+      });
+    }
+  }
+  catch(e){console.warn('loadMen',e);}
+}
+async function saveMen(){
+  // Ne sauvegarder que les clés valides
+  const clean=Object.fromEntries(Object.entries(S.men).filter(([k])=>VALID_MEN_KEY.test(k)));
+  try{await fetch('/api/men',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(clean)});}
+  catch(e){console.warn('saveMen',e);}
+}
+const ds=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),j=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${j}`;};
+const add=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
+const now=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
+const J=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const JL=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const M=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const MC=['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
+const fl=s=>{const d=new Date(s+'T00:00:00');return`${J[d.getDay()]} ${d.getDate()} ${M[d.getMonth()]}`;};
+const flF=s=>{const d=new Date(s+'T00:00:00');return`${JL[d.getDay()]} ${d.getDate()} ${M[d.getMonth()]}`;};
+const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+
+// ════ SUGGESTIONS ════
+function isOblig(propId, dateStr){
+  // Jour obligatoire si un séjour commence ce jour-là
+  return S.res.some(r=>r.propId===propId && r.startDate===dateStr);
+}
+function genSug(){
+  S.sug={};
+  const TOD=ds(now());
+  PROPS.forEach(p=>{
+    const res=S.res.filter(r=>r.propId===p.id).sort((a,b)=>a.startDate.localeCompare(b.startDate));
+    res.forEach(r=>{
+      const ci=new Date(r.startDate+'T00:00:00');
+      const fd=add(ci,-7),fe=ci;
+      const dejaMen=Object.keys(S.men).some(k=>{if(!k.startsWith(p.id+'_'))return false;const d2=k.split('_')[1];return d2>=ds(fd)&&d2<=ds(fe);});
+      if(dejaMen)return;
+      const rxIdx=buildResIdx();
+      const cands=[];
+      for(let d=new Date(fd);d<=fe;d=add(d,1)){
+        const ds_=ds(d);
+        if(ds_<TOD)continue;
+        // Exclure les jours occupés (pas checkout) et les cases both (géré séparément)
+        const rxE=rxIdx[p.id+'_'+ds_];
+        if(rxE&&rxE.both)continue; // both-day = ménage obligatoire, géré par le rendu
+        if(rxE&&!rxE.iE)continue; // jour occupé (pas checkout)
+        if(rxE&&rxE.iE&&rxE.startDate===r.startDate)continue; // checkout du séjour courant
+        const dv=disp(ds_);
+        if(!dv.ok)continue;
+        if((dv.e-dv.s)*60<p.dur*60)continue;
+        const jav=Math.round((ci-d)/86400000);
+        cands.push({date:ds_,dv,pref:dv.pref,jav,oblig:jav===0});
+      }
+      cands.sort((a,b)=>a.jav!==b.jav?a.jav-b.jav:a.pref!==b.pref?a.pref?-1:1:0);
+      for(const c of cands){
+        const mj=getMJ(c.date),sj=getSJ(c.date);
+        const tj=[...mj,...sj];
+        if(tj.length>=2)continue;
+        if(tj.length===1){const ag=PM[tj[0].propId]?.gr;if(ag&&ag!==p.gr)continue;}
+        S.sug[p.id+'_'+c.date]={date:c.date,propId:p.id,jav:c.jav,ci:r.startDate,oblig:c.oblig};
+        break;
+      }
+    });
+  });
+}
+function getMJ(d){return Object.entries(S.men).filter(([k,v])=>v.date===d).map(([k,v])=>({propId:k.split('_')[0],...v}));}
+function getSJ(d){return Object.entries(S.sug).filter(([k,v])=>v.date===d).map(([k,v])=>({propId:k.split('_')[0],...v}));}
+
+// Vérifier si une date est valide pour une suggestion (drag&drop)
+function checkDropValidity(propId, dateStr){
+  const p=PM[propId];
+  if(!p)return'warn';
+  const dv=disp(dateStr);
+  if(!dv.ok)return'warn'; // Sophie indisponible
+  if((dv.e-dv.s)*60<p.dur*60)return'warn'; // Pas assez de temps
+  // Vérifier pas de réservation
+  const rx=buildResIdx();
+  if(rx[propId+'_'+dateStr])return'warn'; // Jour occupé
+  // Vérifier contrainte groupe
+  const mj=getMJ(dateStr),sj=getSJ(dateStr).filter(x=>x.propId!==propId);
+  const tj=[...mj,...sj];
+  if(tj.length>=2)return'warn';
+  if(tj.length===1){const ag=PM[tj[0].propId]?.gr;if(ag&&ag!==p.gr)return'conf';}
+  return'ok';
+}
+let _rxCache=null;
+function buildResIdx(){
+  if(_rxCache)return _rxCache;
+  const rx={};
+  S.res.forEach(r=>{let d=new Date(r.startDate+'T00:00:00');const e=new Date(r.endDate+'T00:00:00');while(d<=e){rx[r.propId+'_'+ds(d)]=r;d=add(d,1);}});
+  return _rxCache=rx;
+}
+
+// ════ SYNC HOSTIFY ════
+async function hGet(path){const r=await fetch(PROXY+path,{headers:{'Accept':'application/json'}});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+
+function resolveDoublons(doublons){
+  return new Promise(resolveAll=>{
+    let remaining=doublons.length;
+    const checkDone=()=>{if(--remaining===0)resolveAll();};
+    doublons.forEach(d=>{
+      const overlay=document.createElement('div');
+      overlay.style.cssText='position:fixed;inset:0;background:rgba(23,35,47,.55);z-index:600;display:flex;align-items:center;justify-content:center';
+      const box=document.createElement('div');
+      box.style.cssText='background:#fff;border-radius:10px;padding:24px 28px;max-width:420px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.22);font-size:.80rem;color:var(--text)';
+      box.innerHTML=`
+        <div style="font-size:1rem;font-weight:700;color:var(--oblig);margin-bottom:6px">⚠️ Réservation en doublon</div>
+        <div style="color:#666;margin-bottom:16px"><b>${d.nom}</b> — checkin <b>${d.startDate}</b></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="dbtn" data-idx="1"
+            style="background:#f0f8ff;border:2px solid #aaa;border-radius:6px;padding:10px 14px;text-align:left;cursor:pointer;font-size:.78rem">
+            <div style="font-weight:700">Version 1</div>
+            <div>👤 ${d.v1.guestName}</div>
+            <div>📅 checkout : <b>${d.v1.endDate}</b></div>
+          </button>
+          <button class="dbtn" data-idx="2"
+            style="background:#f0f8ff;border:2px solid #aaa;border-radius:6px;padding:10px 14px;text-align:left;cursor:pointer;font-size:.78rem">
+            <div style="font-weight:700">Version 2</div>
+            <div>👤 ${d.v2.guestName}</div>
+            <div>📅 checkout : <b>${d.v2.endDate}</b></div>
+          </button>
+        </div>`;
+      box.querySelectorAll('.dbtn').forEach(btn=>{
+        btn.addEventListener('mouseenter',()=>btn.style.borderColor='var(--men)');
+        btn.addEventListener('mouseleave',()=>btn.style.borderColor='#aaa');
+        btn.addEventListener('click',()=>{
+          const chosen=btn.dataset.idx==='1'?d.v1:d.v2;
+          S.res=S.res.filter(r=>!(r.propId===d.propId&&r.startDate===d.startDate));
+          S.res.push(chosen);
+          overlay.remove();
+          toast('✓ '+chosen.guestName+' → '+chosen.endDate+' sélectionné');
+          checkDone();
+        });
+      });
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+    });
+  });
+}
+
+async function syncH(){
+  showL('Connexion à Hostify...');
+  _rxCache=null;
+  try{
+    setL('Chargement des hébergements...');
+    const ld=await hGet('/listings');
+    if(!ld.success)throw new Error(ld.message||'Erreur listings');
+    const idMap={};
+    (ld.listings||[]).forEach(l=>{const pid=matchPropId(l);if(pid)idMap[String(l.id)]=pid;});
+
+    setL('Chargement des réservations...');
+    const from=new Date().getFullYear()+'-01-01',to=ds(add(now(),365));
+    let allRes=[],page=1,hasMore=true;
+    while(hasMore){
+      setL(`Chargement... ${allRes.length} réservations`);
+      const rd=await hGet('/reservations?start_date='+from+'&end_date='+to+'&page='+page);
+      if(!rd.success)throw new Error(rd.message||'Erreur réservations');
+      const batch=rd.reservations||[];
+      allRes=allRes.concat(batch);
+      hasMore=batch.length>0&&allRes.length<(rd.total||0);
+      page++;
+      if(page>20)break;
+    }
+
+    const EXCLUS=['cancelled','expired','denied','declined_inq','withdrawn','timedout','no_show'];
+    S.res=allRes.map(r=>{
+      const eid=r.parent_listing_id||r.listing_id;
+      const propId=idMap[String(eid)]||idMap[String(r.listing_id)]||matchByNick(r.listing_nickname)||matchByNick(r.listing_name)||null;
+      if(!propId)return null;
+      if(EXCLUS.includes(r.status))return null;
+      if(r.status==='inquiry'&&!r.confirmation_code)return null;
+      return{propId,guestName:r.guest_name||'Voyageur',guests:r.guests||r.adults||2,startDate:(r.checkIn||'').split('T')[0],endDate:(r.checkOut||'').split('T')[0],status:r.status};
+    }).filter(r=>r&&r.startDate&&r.endDate);
+
+    // Détecter les doublons (même propId + startDate)
+    const seen={};const doublons=[];
+    S.res.forEach(r=>{
+      const k=r.propId+'_'+r.startDate;
+      if(seen[k]){
+        doublons.push({propId:r.propId,nom:PM[r.propId]?.nom||r.propId,startDate:r.startDate,
+          v1:seen[k],
+          v2:r});
+      } else {seen[k]=r;}
+    });
+    if(doublons.length>0){
+      console.warn('Doublons détectés:',doublons);
+      // Résoudre chaque doublon séquentiellement avant de continuer
+      await resolveDoublons(doublons);
+    }
+
+    setL('Chargement des ménages...');
+    await loadMen();
+    setL('Génération des suggestions...');
+    genSug();
+    _rxCache=null;
+    document.getElementById('sbar').style.display='flex';
+    document.getElementById('es').style.display='none';
+    document.getElementById('bsync').textContent=`✓ ${new Date().toLocaleTimeString('fr-FR')}`;
+    document.getElementById('bsync').style.color='var(--creme)';
+    goT();renderW();
+    toast(`✓ ${S.res.length} réservations · ${Object.keys(S.sug).length} suggestions`);
+  }catch(e){console.error(e);toast('✗ '+e.message);document.getElementById('es').style.display='flex';}
+  finally{hideL();}
+}
+
+// ════ NAVIGATION ════
+function goT(){S.start=add(now(),-3);render();}
+function nav(d){S.start=add(S.start||now(),d);render();}
+
+// ════ RENDU PLANNING ════
+function render(){
+  if(!S.start)S.start=add(now(),-3);
+  if(!S.res.length){document.getElementById('es').style.display='flex';return;}
+  document.getElementById('es').style.display='none';
+  _rxCache=null;
+
+  const todStr=ds(now());
+  const dates=Array.from({length:S.days},(_,i)=>add(S.start,i));
+  const d0=dates[0],dN=dates[dates.length-1];
+  document.getElementById('ml').textContent=MC[d0.getMonth()]!==MC[dN.getMonth()]?`${MC[d0.getMonth()]} – ${MC[dN.getMonth()]} ${dN.getFullYear()}`:`${M[d0.getMonth()]} ${d0.getFullYear()}`;
+
+  // Construire l'index avec iS/iE AVANT le rendu
+  const rx=rebuildResIdx();
+
+  // Calculer les jours obligatoires (checkin = ce jour)
+  const obligDates=new Set();
+  S.res.forEach(r=>obligDates.add(r.propId+'_'+r.startDate));
+
+  const g=document.getElementById('grid');
+  g.innerHTML='';g.style.gridTemplateColumns=`190px repeat(${S.days},52px)`;
+
+  // En-tête
+  const ph=el('div','cph');ph.textContent='Hébergement';g.appendChild(ph);
+  dates.forEach(d=>{
+    const ds_=ds(d);
+    // Vérifier si c'est un jour obligatoire pour au moins un hébergement
+    const isObligDay=PROPS.some(p=>obligDates.has(p.id+'_'+ds_)&&!S.men[p.id+'_'+ds_]);
+    let cls='cdh';
+    if(ds_===todStr)cls+=' tod';
+    else if(isObligDay)cls+=' oblig';
+    const c=el('div',cls);
+    c.dataset.date=ds_;
+    c.innerHTML=`<span class="dw">${J[d.getDay()]}</span><span class="dm">${d.getDate()}</span>`;
+    g.appendChild(c);
+  });
+
+  let nM=0,nS=0;
+  PROPS.forEach(p=>{
+    const nc=el('div','cpn');
+    nc.dataset.prop=p.id;
+    nc.innerHTML=`<div class="pn" title="${p.nom}">${p.nom}</div>`;
+    g.appendChild(nc);
+
+    dates.forEach((d,idx)=>{
+      const ds_=ds(d),k=p.id+'_'+ds_,r=rx[k];
+      const hM=!!S.men[k],hS=!!S.sug[k]&&!hM;
+      const free=!r,we=d.getDay()===0||d.getDay()===6;
+      const isObligDay=obligDates.has(k)&&!hM;
+
+      let cls='cd';
+      if(free)cls+=' free';
+      if(we)cls+=' we';
+      if(ds_===todStr)cls+=' tc';
+      // oblig-col supprimé - on utilise uniquement les couleurs de case
+      const c=el('div',cls);
+      c.dataset.prop=p.id;c.dataset.date=ds_;
+
+      if(r){
+        if(r.both){
+          // Case-jour checkout+checkin simultané : 2 demi-barres
+          // Ne pas ajouter both-day (rouge) si déjà un ménage confirmé (hM)
+          if(!hM)c.classList.add('both-day');
+          const barEn=el('div','rb both-en');
+          c.appendChild(barEn);
+          const barSt=el('div','rb both-st');
+          c.appendChild(barSt);
+          // Label du séjour qui commence (iS)
+          c.style.overflow='visible';
+          const nextRes=S.res.find(nr=>nr.propId===p.id&&nr.startDate===ds_);
+          if(nextRes){
+            const lbl=el('div','rb-label');
+            const startD2=new Date(nextRes.startDate+'T00:00:00');
+            const endD2=new Date(nextRes.endDate+'T00:00:00');
+            const nDays2=Math.round((endD2-startD2)/86400000);
+            const w2=Math.max(100,nDays2*52-26);
+            lbl.style.width=w2+'px';
+            lbl.innerHTML=`<span class="rn">${nextRes.guestName}</span><span class="rg">👥 ${nextRes.guests} pers.</span>`;
+            c.appendChild(lbl);
+          }
+        } else {
+          // Barre réservation - demi-case début (st) / fin (en) / milieu (mid)
+          const bar=el('div','rb');
+          if(r.iS)bar.classList.add('st');
+          else if(r.iE)bar.classList.add('en');
+          else bar.classList.add('mid');
+          c.appendChild(bar);
+          // Label nom+pax déborde sur les cellules suivantes (uniquement au start)
+          if(r.iS){
+            c.style.overflow='visible';
+            const lbl=el('div','rb-label');
+            const startD=new Date(r.startDate+'T00:00:00');
+            const endD=new Date(r.endDate+'T00:00:00');
+            const nDays=Math.round((endD-startD)/86400000);
+            const w=Math.max(100, nDays*52-26);
+            lbl.style.width=w+'px';
+            lbl.innerHTML=`<span class="rn">${r.guestName}</span><span class="rg">👥 ${r.guests} pers.</span>`;
+            c.appendChild(lbl);
+          }
+          // Clic sur case checkin ou checkout -> ouvrir popup ménage
+          if(r.iS||r.iE){
+            c.style.cursor='pointer';
+            c.classList.add('clickable');
+            c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
+          }
+        }
+      }
+
+      // Cases ménage/suggestion/obligatoire = couleur franche sans texte
+      if(r&&r.both&&!hM){
+        // Case checkout+checkin simultané = ménage obligatoire automatique
+        nS++;
+        c.classList.add('oblig-c','clickable');
+        c.classList.remove('free');
+        c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
+      } else if(hM){
+        nM++;
+        c.classList.add('men-c','clickable');
+        c.classList.remove('free');
+        c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
+      } else if(hS){
+        nS++;
+        const sData=S.sug[k];
+        const isCheckinToday=S.res.some(r=>r.propId===p.id&&r.startDate===ds_);
+        if(isCheckinToday) c.classList.add('oblig-c');
+        else c.classList.add('sug-c');
+        c.classList.remove('free');
+        c.classList.add('clickable');
+        c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
+        c.draggable=true;
+        c.dataset.dragProp=p.id;c.dataset.dragDate=ds_;c.dataset.dragKey=k;
+        c.addEventListener('dragstart',e=>{
+          S.dragData={propId:p.id,fromDate:ds_,fromKey:k};
+          e.dataTransfer.effectAllowed='move';
+          e.target.style.opacity='.6';
+        });
+        c.addEventListener('dragend',e=>{e.target.style.opacity='1';clearDropHighlights();});
+      }
+
+
+
+      // Drag & drop sur les cases libres
+      if(free){
+        c.addEventListener('click',()=>openM(p,d,ds_));
+        c.addEventListener('dragover',e=>{
+          if(!S.dragData||S.dragData.propId!==p.id)return;
+          e.preventDefault();
+          const v=checkDropValidity(p.id,ds_);
+          clearDropHighlights();
+          c.classList.add('drop-'+v);
+        });
+        c.addEventListener('dragleave',()=>c.classList.remove('drop-ok','drop-warn','drop-conf'));
+        c.addEventListener('drop',e=>{
+          e.preventDefault();
+          if(!S.dragData||S.dragData.propId!==p.id)return;
+          const v=checkDropValidity(p.id,ds_);
+          if(v==='warn'){toast('⚠ Sophie indisponible ce jour');clearDropHighlights();return;}
+          // Déplacer la suggestion
+          const old=S.sug[S.dragData.fromKey];
+          delete S.sug[S.dragData.fromKey];
+          S.sug[k]={...old,date:ds_,oblig:obligDates.has(k)};
+          S.dragData=null;
+          clearDropHighlights();
+          _rxCache=null;render();
+          toast(v==='conf'?`⚠ Suggestion déplacée (conflit groupe géo)`:`✓ Suggestion déplacée au ${fl(ds_)}`);
+        });
+      }
+      // Surbrillance en-têtes au survol
+      c.addEventListener('mouseenter',()=>{
+        document.querySelectorAll(`.cdh[data-date="${ds_}"]`).forEach(h=>h.classList.add('hl'));
+        document.querySelectorAll(`.cpn[data-prop="${p.id}"]`).forEach(h=>h.classList.add('hl'));
+      });
+      c.addEventListener('mouseleave',()=>{
+        document.querySelectorAll(`.cdh[data-date="${ds_}"]`).forEach(h=>h.classList.remove('hl'));
+        document.querySelectorAll(`.cpn[data-prop="${p.id}"]`).forEach(h=>h.classList.remove('hl'));
+      });
+      g.appendChild(c);
+    });
+  });
+
+  document.getElementById('sR').textContent=S.res.length;
+  document.getElementById('sM').textContent=nM;
+  document.getElementById('sS').textContent=nS;
+}
+
+function clearDropHighlights(){
+  document.querySelectorAll('.drop-ok,.drop-warn,.drop-conf').forEach(e=>e.classList.remove('drop-ok','drop-warn','drop-conf'));
+}
+
+function rebuildResIdx(){
+  _rxCache=null;
+  const rx={};
+  S.res.forEach(r=>{
+    // Jours intérieurs : startDate <= jour < endDate
+    const startD=new Date(r.startDate+'T12:00:00');
+    let cur=new Date(startD);
+    while(ds(cur)<r.endDate){
+      const ds_=ds(cur);
+      const k=r.propId+'_'+ds_;
+      const iS=ds_===r.startDate;
+      if(rx[k]){
+        // Conflit : un autre séjour a déjà cette case (checkout+checkin simultané)
+        rx[k].iS=rx[k].iS||iS;
+        rx[k].iE=rx[k].iE||false;
+        rx[k].both=true;
+      } else {
+        rx[k]={...r,iS,iE:false,both:false};
+      }
+      cur=add(cur,1);
+    }
+    // Ajouter explicitement la case endDate avec iE=true
+    const ke=r.propId+'_'+r.endDate;
+    if(rx[ke]){
+      // Checkout+checkin simultané sur cette case
+      rx[ke].iE=true;
+      rx[ke].both=true;
+    } else {
+      rx[ke]={...r,iS:false,iE:true,both:false};
+    }
+  });
+  _rxCache=rx;
+  return rx;
+}
+
+// Override buildResIdx pour inclure iS/iE
+function buildResIdx(){
+  if(_rxCache)return _rxCache;
+  return rebuildResIdx();
+}
+
+// ════ MODAL ════
+function openM(p,date,ds_){
+  const resProp=S.res.filter(r=>r.propId===p.id).sort((a,b)=>a.startDate.localeCompare(b.startDate));
+  let pc=null,nc=null;
+  resProp.forEach(r=>{if(r.endDate<=ds_)pc=r.endDate;if(r.startDate>ds_&&!nc)nc=r.startDate;});
+
+  // Date fixe = la case-jour cliquée
+  const dv=disp(ds_);
+  const oblig=S.res.some(r=>r.propId===p.id&&r.startDate===ds_);
+  const avail=[{date:ds_,dv,isSug:!!S.sug[p.id+'_'+ds_],oblig,unavail:!dv.ok}];
+  const ek=S.men[p.id+'_'+ds_]?p.id+'_'+ds_:null;
+  const em=ek?S.men[ek]:null;
+  S.modal={p,ds_,avail,ek};
+
+  document.getElementById('mT').textContent=p.nom;
+  const isObligDay=oblig;
+  document.getElementById('mS').innerHTML=
+    `<strong>Prochain séjour :</strong> ${nc?flF(nc)+' (checkin 17h)':'—'}<br>`+
+    `<strong>Départ précédent :</strong> ${pc?flF(pc):'—'}<br>`+
+    `<strong>Durée :</strong> ${p.dur}h · <strong>Capacité :</strong> ${p.cap} pers.`+
+    (isObligDay?`<div class="oblig-hint">🔴 Ménage obligatoire — les vacanciers arrivent aujourd'hui !</div>`:'');
+
+  const ctr=document.getElementById('mD');ctr.innerHTML='';
+  // Afficher uniquement la date cliquée, pré-sélectionnée
+  let cls='chip sel';
+  if(oblig)cls+=' oblig';
+  else if(avail[0].isSug)cls+=' sug';
+  const chip=el('div',cls);
+  chip.innerHTML=`${fl(ds_)}<br><span style="font-size:.62rem;opacity:.7">${dv.ok?hm(dv.s)+'–'+hm(dv.e):'Indisponible'}</span>`;
+  chip.dataset.date=ds_;
+  ctr.appendChild(chip);
+
+  document.getElementById('mN').value=em?.note||'';
+  document.getElementById('bdel').style.display=ek?'block':'none';
+  document.getElementById('mo').classList.add('open');
+}
+function closeM(){document.getElementById('mo').classList.remove('open');S.modal=null;}
+document.getElementById('mo').addEventListener('click',e=>{if(e.target===document.getElementById('mo'))closeM();});
+function saveM(){
+  const sel=document.querySelector('.chip.sel');if(!sel){toast('⚠ Choisissez une date');return;}
+  const date=sel.dataset.date,note=document.getElementById('mN').value.trim();
+  const{p,ek}=S.modal;
+  if(ek)delete S.men[ek];
+  Object.keys(S.sug).filter(k=>k.startsWith(p.id+'_')).forEach(k=>delete S.sug[k]);
+  S.men[p.id+'_'+date]={date,note,propName:p.nom,propId:p.id,dur:p.dur};
+  closeM();_rxCache=null;render();renderW();renderWA();
+  saveMen();
+  toast(`✓ Ménage confirmé — ${p.nom} · ${fl(date)}`);
+}
+function delM(){if(S.modal.ek)delete S.men[S.modal.ek];genSug();closeM();_rxCache=null;render();renderW();renderWA();saveMen();toast('🗑 Supprimé');}
+
+// ════ VUE ÉQUIPE ════
+function getLundi(off=0){const t=now(),dw=t.getDay(),df=dw===0?-6:1-dw;return add(t,df+off*7);}
+function goWT(){S.wo=0;renderW();}
+function navW(d){S.wo+=d;renderW();}
+function getIvSem(lundi){
+  const r=[];
+  for(let i=0;i<7;i++){
+    const ds_=ds(add(lundi,i));
+    Object.entries(S.men).forEach(([k,v])=>{if(v.date===ds_)r.push({...v,propId:k.split('_')[0],conf:true});});
+    Object.entries(S.sug).forEach(([k,v])=>{if(v.date===ds_&&!S.men[k]){const p=PM[v.propId];r.push({date:ds_,propId:v.propId,propName:p?.nom||'',dur:p?.dur||2,note:'',conf:false});}});
+  }
+  return r.sort((a,b)=>a.date.localeCompare(b.date));
+}
+function renderW(){
+  const l=getLundi(S.wo),f=add(l,6);
+  document.getElementById('wlabel').textContent=`Semaine du ${l.getDate()} ${MC[l.getMonth()]} au ${f.getDate()} ${MC[f.getMonth()]} ${f.getFullYear()}`;
+  const iv=getIvSem(l),g=document.getElementById('wgrid');g.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=add(l,i),ds_=ds(d);
+    const its=iv.filter(x=>x.date===ds_);
+    const we=d.getDay()===0||d.getDay()===6,fe=FERIES.has(ds_),dv=disp(ds_);
+    const tot=its.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
+    const card=el('div','dc');
+    const hdr=el('div','dch');
+    const hasConf=its.some(x=>x.conf&&!x.oblig);
+    const hasOblig=its.some(x=>x.oblig);
+    const hasSug=its.some(x=>!x.conf);
+    if(its.length>0){
+      if(hasOblig)hdr.classList.add('has-oblig');
+      else if(hasConf)hdr.classList.add('has-conf');
+      else hdr.classList.add('has-sug');
+    } else if(we||fe) hdr.classList.add('we');
+    const jn=`${JL[d.getDay()].substring(0,3)} ${d.getDate()}`;
+    hdr.innerHTML=`<span>${jn}</span>${its.length?`<span class="tot">${tot}h</span>`:''}`;
+    card.appendChild(hdr);
+    if(!dv.ok){const e=el('div','de');e.textContent='Repos';card.appendChild(e);}
+    else if(its.length===0){const e=el('div','de');e.textContent=we||fe?'Disponible si nécessaire':`Dispo ${hm(dv.s)}–${hm(dv.e)}`;card.appendChild(e);}
+    else{
+      its.forEach(x=>{
+        const p=PM[x.propId];if(!p)return;
+        const mc=el('div','mc'+(x.oblig?' is-oblig':x.conf?'':' is-sug'));
+        mc.innerHTML=`<div class="mcn">${p.nom}</div><div class="mcd">${p.dur}h</div>`;
+        card.appendChild(mc);
+      });
+    }
+    g.appendChild(card);
+  }
+  // Tableau récapitulatif — 7 jours fixes
+  const ws=document.getElementById('wsum');
+  const tot2=iv.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
+  ws.innerHTML=`<div class="wst"><span>📋 Récapitulatif — ${iv.length} intervention(s) · ${tot2}h</span></div>`;
+  const tbl=el('table','wtbl');
+  tbl.innerHTML='<thead><tr><th>Jour</th><th>Hébergement</th><th>Adresse</th><th>Lits</th><th>SDB</th><th>Durée</th><th>Note</th></tr></thead>';
+  const tb=el('tbody');
+  for(let i=0;i<7;i++){
+    const d=add(l,i),ds_=ds(d);
+    const its=iv.filter(x=>x.date===ds_);
+    const dLabel=`${JL[d.getDay()]} ${d.getDate()} ${M[d.getMonth()]}`;
+    const we=d.getDay()===0||d.getDay()===6,dv=disp(ds_);
+    if(its.length===0){
+      const tr=el('tr','empty-row');
+      const status=!dv.ok?'Repos':(we?'Disponible si nécessaire':'Disponible');
+      tr.innerHTML=`<td class="day-cell">${dLabel}</td><td colspan="6"><span class="dot none" style="display:inline-block"></span>${status}</td>`;
+      tb.appendChild(tr);
+    } else {
+      its.forEach((x,idx)=>{
+        const p=PM[x.propId];if(!p)return;
+        const tr=el('tr');
+        const dotCls=x.oblig?'oblig':x.conf?'conf':'sug';
+        const durCls=x.oblig?'oblig':x.conf?'conf':'sug';
+        const rowspan=idx===0&&its.length>1?` rowspan="${its.length}"`:'';
+        const dayCell=idx===0?`<td class="day-cell"${rowspan} style="vertical-align:middle">${dLabel}</td>`:'';
+        tr.innerHTML=`${dayCell}<td class="prop-cell"><span class="dot ${dotCls}" style="display:inline-block"></span>${p.nom}</td><td style="font-size:11px;color:#666">${p.adr}</td><td class="lits-cell">${lits(p).replace(/, /g,'<br>')}</td><td>${p.sdb}</td><td class="dur-cell ${durCls}">${p.dur}h</td><td style="color:#bbb;font-size:11px">${x.note||'—'}</td>`;
+        tb.appendChild(tr);
+      });
+    }
+  }
+  tbl.appendChild(tb);ws.appendChild(tbl);
+}
+
+
+// ════ WHATSAPP ════
+function buildWAMsg(weekOffset=S.ww){
+  const l=getLundi(weekOffset);
+  const iv=getIvSem(l);
+  const pj={};iv.forEach(x=>{if(!pj[x.date])pj[x.date]=[];pj[x.date].push(x);});
+  let msg=`*SÉRÉNISSIME CONCIERGERIE*\nPlanning Sophie – Sem. du ${l.getDate()} ${MC[l.getMonth()]}\n${'─'.repeat(32)}\n\n`;
+  Object.entries(pj).sort().forEach(([d,its])=>{
+    const dt=new Date(d+'T00:00:00');
+    msg+=`_*${JL[dt.getDay()].toUpperCase()} ${dt.getDate()} ${M[dt.getMonth()].toUpperCase()}*_\n\n`;
+    its.forEach(x=>{
+      const p=PM[x.propId];if(!p)return;
+      msg+=`*${p.nom}*\n${p.adr}\nDurée : ${p.dur}h · ${p.cap} pers.\n${lits(p)} · ${p.sdb} SDB\n`;
+      if(x.note)msg+=`${x.note}\n`;
+      msg+='\n';
+    });
+  });
+  const tot=iv.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
+  msg+=`${'─'.repeat(32)}\n${iv.length} intervention(s) · ${tot}h\nBonne journée Sophie !`;
+  return msg;
+}
+function renderWA(){} // désactivé - onglet WhatsApp supprimé
+function openWAModal(){document.getElementById('waModal').classList.add('open');}
+function closeWAModal(){document.getElementById('waModal').classList.remove('open');document.getElementById('waInputRow').style.display='none';}
+function showWAInput(){document.getElementById('waInputRow').style.display='block';document.getElementById('waNumInput').focus();}
+function sendWASophie(){sendWATo('0767380687');}
+function sendWATo(num){
+  const n=num.replace(/\s/g,'').replace(/^0/,'33');
+  const msg=buildWAMsg();
+  window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');
+  closeWAModal();
+}
+function sendWACustom(){
+  const raw=document.getElementById('waNumInput').value;
+  if(!raw.trim()){toast('⚠ Entrez un numéro');return;}
+  sendWATo(raw);
+}
+
+function copyWA(){navigator.clipboard.writeText(document.getElementById('wprev').textContent).then(()=>toast('✓ Copié !'));}
+function openWA(){window.open('https://wa.me/?text='+encodeURIComponent(document.getElementById('wprev').textContent),'_blank');}
+
+// ════ EXPORTS ════
+function exportCSV(){
+  if(!Object.keys(S.men).length){toast('⚠ Aucun ménage planifié');return;}
+  const rows=['Hébergement,Date,Jour,Note'];
+  // Ménages confirmés
+  Object.values(S.men).sort((a,b)=>a.date.localeCompare(b.date)).forEach(m=>{
+    const d=new Date(m.date+'T00:00:00');
+    rows.push(`"${m.propName}","${m.date}","${J[d.getDay()]}","Confirmé","${(m.note||'').replace(/"/g,"'")}"`);
+  });
+  // Ménages obligatoires (both-day : checkout+checkin simultané)
+  const rx2=buildResIdx();
+  Object.entries(rx2).forEach(([k,r])=>{
+    if(!r.both)return;
+    const [pid,date]=k.split('_');
+    const p=PM[pid];if(!p)return;
+    if(S.men[k])return; // déjà confirmé
+    const d=new Date(date+'T00:00:00');
+    rows.push(`"${p.nom}","${date}","${J[d.getDay()]}","OBLIGATOIRE",""`);
+  });
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8'}));a.download=`menages-serenissime-${ds(new Date())}.csv`;a.click();toast('✓ CSV exporté');
+}
+function exportGCal(){
+  const entries=Object.values(S.men);
+  if(!entries.length){toast('⚠ Aucun ménage planifié');return;}
+  entries.sort((a,b)=>a.date.localeCompare(b.date)).forEach(m=>{
+    const d=m.date.replace(/-/g,''),dn=ds(add(new Date(m.date+'T00:00:00'),1)).replace(/-/g,'');
+    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Ménage — '+m.propName)}&dates=${d}/${dn}&details=${encodeURIComponent(m.note||'')}`, '_blank');
+  });
+  toast(`✓ ${entries.length} événement(s) → Google Calendar`);
+}
+
+// ════ EXPORT PDF MENSUEL ════
+function exportPDF(){
+  // Fusionner ménages confirmés + obligatoires (both-day)
+  const rx3=buildResIdx();
+  const bothEntries=[];
+  Object.entries(rx3).forEach(([k,r])=>{
+    if(!r.both)return;
+    const [pid,date]=k.split('_');
+    const p=PM[pid];if(!p)return;
+    if(S.men[k])return;
+    bothEntries.push({date,propId:pid,propName:p.nom,note:'MÉNAGE OBLIGATOIRE',dur:p.dur,oblig:true});
+  });
+  const entries=[...Object.values(S.men),...bothEntries].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!entries.length){toast('Aucun menage confirme a exporter');return;}
+  const mois={};
+  entries.forEach(m=>{const mo=m.date.substring(0,7);if(!mois[mo])mois[mo]=[];mois[mo].push(m);});
+  const lignes=[];
+  Object.entries(mois).sort().forEach(([mo,ms])=>{
+    const [y,m_]=mo.split('-');
+    const mName=M[parseInt(m_)-1]+' '+y;
+    const totH=ms.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
+    lignes.push('<div style="page-break-inside:avoid;margin-bottom:28px"><h2 style="font-family:Georgia,serif;font-size:15px;color:#8D1733;border-bottom:2px solid #8D1733;padding-bottom:6px;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">'+mName+'</h2><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#17232F;color:#E7D8B5"><th style="padding:7px 10px;text-align:left">Hébergement</th><th style="padding:7px 10px;text-align:left">Date</th><th style="padding:7px 10px;text-align:left">Jour</th><th style="padding:7px 10px;text-align:center">Durée</th><th style="padding:7px 10px;text-align:left">Note</th></tr></thead><tbody>'+
+      ms.map((m,i)=>{
+        const d=new Date(m.date+'T00:00:00');const p=PM[m.propId];const bg=i%2===0?'#f8f5ee':'#fff';
+        return '<tr style="background:'+bg+'"><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;font-weight:700">'+(p?.nom||m.propName)+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0">'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0">'+JL[d.getDay()]+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;text-align:center;font-weight:700;color:#27AE60">'+(p?.dur||'?')+'h</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;color:#666;font-size:11px">'+(m.note||'—')+'</td></tr>';
+      }).join('')+
+      '<tr style="background:#E7D8B5;font-weight:700"><td style="padding:7px 10px" colspan="3">TOTAL '+mName+'</td><td style="padding:7px 10px;text-align:center;color:#8D1733">'+totH+'h</td><td style="padding:7px 10px">'+ms.length+' intervention(s)</td></tr></tbody></table></div>');
+  });
+  const totG=entries.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
+  const dateGen=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recapitulatif Serenissime</title><style>body{font-family:sans-serif;margin:0;padding:32px 40px;color:#17232F;font-size:12px}@page{margin:20mm 15mm;size:A4}</style></head><body>'+
+    '<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;border-bottom:3px solid #8D1733;padding-bottom:16px">'+
+    '<div style="width:52px;height:52px;background:#8D1733;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#E7D8B5;font-family:Georgia,serif">S</div>'+
+    '<div><div style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#17232F">SÉRÉNISSIME CONCIERGERIE</div>'+
+    '<div style="font-size:12px;color:#666;margin-top:2px">Récapitulatif des interventions — Sophie Jouetre</div>'+
+    '<div style="font-size:11px;color:#999;margin-top:1px">Généré le '+dateGen+'</div></div></div>'+
+    lignes.join('')+
+    '<div style="margin-top:24px;background:#17232F;color:#E7D8B5;padding:12px 16px;border-radius:6px;display:flex;justify-content:space-between">'+
+    '<span style="font-family:Georgia,serif;font-size:14px;font-weight:700">TOTAL GÉNÉRAL</span>'+
+    '<span style="font-size:14px;font-weight:700">'+entries.length+' intervention(s) · '+totG+'h</span></div>'+
+    '</body></html>';
+  const win=window.open('','_blank');
+  win.document.write(html);win.document.close();win.focus();
+  setTimeout(()=>win.print(),600);
+  toast('PDF genere — '+entries.length+' interventions');
+}
+
+// ════ NAVIGATION PAGES ════
+function showPage(id,t){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');t.classList.add('active');
+  if(id==='p2')renderW();
+}
+
+// ════ UI ════
+function showL(m){document.getElementById('lm').textContent=m;document.getElementById('ls').classList.add('show');}
+function setL(m){document.getElementById('lm').textContent=m;}
+function hideL(){document.getElementById('ls').classList.remove('show');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+
+document.getElementById('es').style.display='flex';
+
+document.getElementById('es').style.display='flex';
+</script>
+</body>
+</html>
