@@ -1,4 +1,4 @@
-name = "serenissime-planning"
+name = "serenissime-planning-v2"
 main = "worker.js"
 compatibility_date = "2024-09-23"
 
