@@ -1,0 +1,11 @@
+name = "serenissime-planning"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "MEN_KV"
+id = "c893d910753b4f969b25533fbf37d4b4"
