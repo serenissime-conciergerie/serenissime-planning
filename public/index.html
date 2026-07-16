@@ -539,7 +539,7 @@ async function syncH(){
       if(page>20)break;
     }
 
-    const EXCLUS=['cancelled','expired','denied','declined_inq','withdrawn','timedout','no_show'];
+    const EXCLUS=['cancelled','expired','denied','declined_inq','withdrawn','timedout','no_show','payment_failed','voided'];
     S.res=allRes.map(r=>{
       const eid=r.parent_listing_id||r.listing_id;
       const propId=idMap[String(eid)]||idMap[String(r.listing_id)]||matchByNick(r.listing_nickname)||matchByNick(r.listing_name)||null;
