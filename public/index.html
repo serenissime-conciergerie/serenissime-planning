@@ -91,6 +91,8 @@ header{background:var(--nuit);padding:10px 20px;display:flex;align-items:center;
 .rb.both-st{left:60%;right:0;border-radius:4px 0 0 4px}
 .cd.both-day{background:var(--oblig)}
 .cd.both-day.men-c{background:var(--men)!important}
+.cd.both-day-ext{background:#f0e8d0;outline:1px dashed var(--bord2)}
+.cd.both-day-ext:hover{background:#ede2c4}
 
 /* Label nom vacancier — centré, déborde sur les cellules suivantes */
 .rb-label{position:absolute;top:4px;bottom:4px;left:50%;white-space:nowrap;z-index:6;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding-left:6px;pointer-events:none}
@@ -187,6 +189,7 @@ header{background:var(--nuit);padding:10px 20px;display:flex;align-items:center;
 .mnote:focus{border-color:var(--nuit3)}
 .mact{display:flex;justify-content:flex-end;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid #ede5d0}
 .bdel{background:#fff0f0;color:var(--bord);border:1px solid var(--bord-light);font-size:.72rem;padding:6px 11px;border-radius:4px;cursor:pointer;font-family:'Open Sans',sans-serif}
+.bobl{background:#f0e8d0;color:var(--nuit);border:1px solid #ddd0a8;font-size:.72rem;padding:6px 11px;border-radius:4px;cursor:pointer;font-family:'Open Sans',sans-serif}
 .bconf{background:var(--men);color:#fff;font-size:.72rem;padding:6px 13px;border-radius:4px;cursor:pointer;border:none;font-family:'Open Sans',sans-serif}
 .bcan{background:var(--creme2);color:var(--text);border:1px solid #d8ceb8;font-size:.72rem;padding:6px 11px;border-radius:4px;cursor:pointer;font-family:'Open Sans',sans-serif}
 
@@ -270,6 +273,7 @@ header{background:var(--nuit);padding:10px 20px;display:flex;align-items:center;
     <label class="msl">Note pour Sophie</label>
     <textarea class="mnote" id="mN" placeholder="Instructions, accès, particularités..."></textarea>
     <div class="mact">
+      <button class="bobl" id="bobl" style="display:none"></button>
       <button class="bdel" id="bdel" onclick="delM()" style="display:none">🗑 Supprimer</button>
       <button class="bcan" onclick="closeM()">Annuler</button>
       <button class="bconf" onclick="saveM()">✓ Confirmer</button>
@@ -364,7 +368,7 @@ function lits(p){const r=[];if(p.l160>0)r.push(`${p.l160}×160`);if(p.l140>0)r.p
 
 // ════ ÉTAT ════
 
-const S={start:null,days:35,res:[],men:{},sug:{},wo:0,ww:0,dragData:null};
+const S={start:null,days:35,res:[],men:{},sug:{},wo:0,ww:0,dragData:null,obligOverride:{}};
 const VALID_MEN_KEY=/^(alt|cov|ate|dun|sec|bal|pet|lat|typ|vil|hor|vaz|car)_\d{4}-\d{2}-\d{2}$/;
 async function loadMen(){
   try{
@@ -396,6 +400,47 @@ const MC=['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov',
 const fl=s=>{const d=new Date(s+'T00:00:00');return`${J[d.getDay()]} ${d.getDate()} ${M[d.getMonth()]}`;};
 const flF=s=>{const d=new Date(s+'T00:00:00');return`${JL[d.getDay()]} ${d.getDate()} ${M[d.getMonth()]}`;};
 const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e;};
+
+// ════ PROLONGATIONS DE SÉJOUR (ménage obligatoire jour checkout+checkin) ════
+function normName(s){return(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+// Renvoie {out,inn,sameName} si ce jour est un checkout+checkin simultané pour la propriété, sinon null
+function bothInfo(propId,dateStr){
+  const out=S.res.find(r=>r.propId===propId&&r.endDate===dateStr);
+  const inn=S.res.find(r=>r.propId===propId&&r.startDate===dateStr);
+  if(!out||!inn)return null;
+  const n1=normName(out.guestName),n2=normName(inn.guestName);
+  return{out,inn,sameName:n1!==''&&n1===n2};
+}
+// Un jour both-day est-il un VRAI ménage obligatoire (nouvelle réservation) ou une simple prolongation ?
+// Priorité : override manuel > détection auto (même nom = prolongation, donc pas de ménage)
+function isMandatoryOblig(propId,dateStr){
+  const bi=bothInfo(propId,dateStr);
+  if(!bi)return false;
+  const ov=S.obligOverride[propId+'_'+dateStr];
+  if(ov==='skip')return false;
+  if(ov==='force')return true;
+  return !bi.sameName;
+}
+async function loadOverride(){
+  try{
+    const r=await fetch('/api/oblig-override');
+    if(r.ok){
+      const data=await r.json();
+      Object.entries(data).forEach(([k,v])=>{if(VALID_MEN_KEY.test(k)&&(v==='skip'||v==='force'))S.obligOverride[k]=v;});
+    }
+  }catch(e){console.warn('loadOverride',e);}
+}
+async function saveOverride(){
+  try{await fetch('/api/oblig-override',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(S.obligOverride)});}
+  catch(e){console.warn('saveOverride',e);}
+}
+function setOblig(key,mode){
+  if(mode===null)delete S.obligOverride[key];
+  else S.obligOverride[key]=mode;
+  saveOverride();
+  closeM();_rxCache=null;render();renderW();renderWA();
+  toast(mode==='skip'?'✓ Marqué comme prolongation — pas de ménage requis':mode==='force'?'✓ Ménage obligatoire forcé':'✓ Réinitialisé (détection automatique)');
+}
 
 // ════ SUGGESTIONS ════
 function isOblig(propId, dateStr){
@@ -588,6 +633,7 @@ async function syncH(){
 
     setL('Chargement des ménages...');
     await loadMen();
+    await loadOverride();
     setL('Génération des suggestions...');
     genSug();
     _rxCache=null;
@@ -621,8 +667,13 @@ function render(){
   const rx=rebuildResIdx();
 
   // Calculer les jours obligatoires (checkin = ce jour)
+  // On exclut les both-day (checkout+checkin simultané) détectés comme prolongation de séjour
   const obligDates=new Set();
-  S.res.forEach(r=>obligDates.add(r.propId+'_'+r.startDate));
+  S.res.forEach(r=>{
+    const bi=bothInfo(r.propId,r.startDate);
+    if(bi&&!isMandatoryOblig(r.propId,r.startDate))return;
+    obligDates.add(r.propId+'_'+r.startDate);
+  });
 
   const g=document.getElementById('grid');
   g.innerHTML='';g.style.gridTemplateColumns=`190px repeat(${S.days},52px)`;
@@ -654,6 +705,9 @@ function render(){
       const hM=!!S.men[k],hS=!!S.sug[k]&&!hM;
       const free=!r,we=d.getDay()===0||d.getDay()===6;
       const isObligDay=obligDates.has(k)&&!hM;
+      // biBoth : ce jour est-il un checkout+checkin simultané ? forcedOblig : ménage réellement obligatoire (pas une prolongation détectée/écartée manuellement)
+      const biBoth=r&&r.both?bothInfo(p.id,ds_):null;
+      const forcedOblig=!!(biBoth&&isMandatoryOblig(p.id,ds_));
 
       let cls='cd';
       if(free)cls+=' free';
@@ -666,8 +720,12 @@ function render(){
       if(r){
         if(r.both){
           // Case-jour checkout+checkin simultané : 2 demi-barres
-          // Ne pas ajouter both-day (rouge) si déjà un ménage confirmé (hM)
-          if(!hM)c.classList.add('both-day');
+          // Rouge (both-day) uniquement si le ménage est réellement obligatoire ;
+          // sinon (prolongation détectée ou écartée manuellement), style neutre both-day-ext
+          if(!hM){
+            if(forcedOblig)c.classList.add('both-day');
+            else c.classList.add('both-day-ext');
+          }
           const barEn=el('div','rb both-en');
           c.appendChild(barEn);
           const barSt=el('div','rb both-st');
@@ -704,18 +762,12 @@ function render(){
             lbl.innerHTML=`<span class="rn">${r.guestName}</span><span class="rg">👥 ${r.guests} pers.</span>`;
             c.appendChild(lbl);
           }
-          // Clic sur case checkin ou checkout -> ouvrir popup ménage
-          if((r.iS||r.iE)&&!hM&&!hS){
-            c.style.cursor='pointer';
-            c.classList.add('clickable');
-            c.addEventListener('click',(e)=>{e.stopPropagation();openM(p,d,ds_);});
-          }
         }
       }
 
       // Cases ménage/suggestion/obligatoire = couleur franche sans texte
-      if(r&&r.both&&!hM){
-        // Case checkout+checkin simultané = ménage obligatoire automatique
+      if(r&&r.both&&!hM&&forcedOblig){
+        // Case checkout+checkin simultané = ménage obligatoire automatique (nouvelle réservation, pas une prolongation)
         nS++;
         c.classList.add('oblig-c','clickable');
         c.classList.remove('free');
@@ -768,11 +820,13 @@ function render(){
 
 
 
-      // Drag & drop sur les cases libres (mais pas si une suggestion ou un ménage
-      // confirmé y est déjà posé : ces cases ont leur propre gestion de clic/glisser
-      // dans le bloc ménage/suggestion ci-dessus, et ne doivent pas être traitées
-      // comme des cases vides cliquables/cibles de dépôt).
-      if(free&&!hS&&!hM){
+      // Clic + drag & drop sur les cases sans ménage confirmé/suggéré ET pas réellement
+      // obligatoires : cases libres, jours de checkin/checkout simple (arrivée OU départ,
+      // mais pas les deux le même jour), et both-day détecté comme prolongation de séjour
+      // (ou écarté manuellement). Ces cases doivent rester des cibles de clic/dépôt valides.
+      if((!r||r.iS||r.iE)&&!forcedOblig&&!hS&&!hM){
+        c.style.cursor='pointer';
+        c.classList.add('clickable');
         c.addEventListener('click',()=>openM(p,d,ds_));
         c.addEventListener('dragover',e=>{
           if(!S.dragData||S.dragData.propId!==p.id)return;
@@ -887,15 +941,27 @@ function openM(p,date,ds_){
   const avail=[{date:ds_,dv,isSug:!!S.sug[p.id+'_'+ds_],oblig,unavail:!dv.ok}];
   const ek=S.men[p.id+'_'+ds_]?p.id+'_'+ds_:null;
   const em=ek?S.men[ek]:null;
-  S.modal={p,ds_,avail,ek};
+  const key=p.id+'_'+ds_;
+  const bi=bothInfo(p.id,ds_);
+  const mandatoryOblig=bi?isMandatoryOblig(p.id,ds_):false;
+  S.modal={p,ds_,avail,ek,bi,key};
 
   document.getElementById('mT').textContent=p.nom;
   const isObligDay=oblig;
+  let hint='';
+  if(bi&&mandatoryOblig){
+    hint=`<div class="oblig-hint">🔴 Ménage obligatoire — les vacanciers arrivent aujourd'hui !</div>`;
+  } else if(bi&&bi.sameName&&!S.obligOverride[key]){
+    hint=`<div class="oblig-hint" style="background:#fdf6e3;border-color:#e6d8a8;color:#8a6d1f">🟡 Prolongation de séjour détectée (même client) — ménage non requis</div>`;
+  } else if(bi&&S.obligOverride[key]==='skip'){
+    hint=`<div class="oblig-hint" style="background:#fdf6e3;border-color:#e6d8a8;color:#8a6d1f">🟡 Marqué manuellement comme prolongation — ménage non requis</div>`;
+  } else if(isObligDay){
+    hint=`<div class="oblig-hint">🔴 Ménage obligatoire — les vacanciers arrivent aujourd'hui !</div>`;
+  }
   document.getElementById('mS').innerHTML=
     `<strong>Prochain séjour :</strong> ${nc?flF(nc)+' (checkin 17h)':'—'}<br>`+
     `<strong>Départ précédent :</strong> ${pc?flF(pc):'—'}<br>`+
-    `<strong>Durée :</strong> ${p.dur}h · <strong>Capacité :</strong> ${p.cap} pers.`+
-    (isObligDay?`<div class="oblig-hint">🔴 Ménage obligatoire — les vacanciers arrivent aujourd'hui !</div>`:'');
+    `<strong>Durée :</strong> ${p.dur}h · <strong>Capacité :</strong> ${p.cap} pers.`+hint;
 
   const ctr=document.getElementById('mD');ctr.innerHTML='';
   // Afficher uniquement la date cliquée, pré-sélectionnée
@@ -909,6 +975,29 @@ function openM(p,date,ds_){
 
   document.getElementById('mN').value=em?.note||'';
   document.getElementById('bdel').style.display=ek?'block':'none';
+
+  // Bouton override ménage obligatoire (uniquement sur un jour checkout+checkin simultané)
+  const bobl=document.getElementById('bobl');
+  if(bi){
+    bobl.style.display='inline-block';
+    const ov=S.obligOverride[key];
+    if(ov==='skip'){
+      bobl.textContent='↺ Réactiver le ménage obligatoire';
+      bobl.onclick=()=>setOblig(key,null);
+    } else if(ov==='force'){
+      bobl.textContent='↺ Revenir à la détection automatique';
+      bobl.onclick=()=>setOblig(key,null);
+    } else if(mandatoryOblig){
+      bobl.textContent='🔓 C\'est une prolongation — annuler ce ménage';
+      bobl.onclick=()=>setOblig(key,'skip');
+    } else {
+      bobl.textContent='⚠ Forcer le ménage obligatoire';
+      bobl.onclick=()=>setOblig(key,'force');
+    }
+  } else {
+    bobl.style.display='none';
+  }
+
   document.getElementById('mo').classList.add('open');
 }
 function closeM(){document.getElementById('mo').classList.remove('open');S.modal=null;}
