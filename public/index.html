@@ -148,7 +148,25 @@ header{background:var(--nuit);padding:10px 20px;display:flex;align-items:center;
 .dot.conf{background:var(--men)}
 .dot.sug{background:var(--sug)}
 .dot.oblig{background:var(--oblig)}
+.dot.cath{background:var(--bord)}
 .dot.none{background:#ddd}
+
+/* ONGLET CATHERINE */
+.dch.has-cat{box-shadow:inset 0 0 0 2px var(--bord)}
+.cat-tag{font-size:.62rem;font-weight:700;color:var(--bord);background:var(--bord-light);padding:1px 5px;border-radius:8px}
+.cat-grid{padding:12px 16px;display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cat-dh{text-align:center;font-size:.65rem;font-weight:700;color:#8a8a8a;text-transform:uppercase;letter-spacing:.05em;padding:4px 0}
+.cat-empty{visibility:hidden}
+.cat-day{background:#fff;border:1px solid #e0d8c8;border-radius:6px;min-height:56px;padding:6px 7px;cursor:pointer;transition:all .12s;display:flex;flex-direction:column;gap:4px}
+.cat-day:hover{border-color:var(--bord);background:var(--bord-light)}
+.cat-day.active{background:var(--bord);border-color:var(--bord)}
+.cat-day.active:hover{background:var(--bord2)}
+.cat-day.locked{cursor:not-allowed;background:#f4f4f4;color:#bbb}
+.cat-day.locked:hover{border-color:#e0d8c8;background:#f4f4f4}
+.cat-num{font-size:.74rem;font-weight:700;color:var(--nuit)}
+.cat-day.active .cat-num{color:#fff}
+.cat-day.locked .cat-num{color:#bbb}
+.cat-tag2{font-size:.62rem;font-weight:700;color:#fff}
 
 /* MODAL WHATSAPP */
 .wa-bg{display:none;position:fixed;inset:0;background:rgba(23,35,47,.55);z-index:200;align-items:center;justify-content:center}
@@ -223,6 +241,7 @@ header{background:var(--nuit);padding:10px 20px;display:flex;align-items:center;
 <div class="tabs">
   <div class="tab active" onclick="showPage('p1',this)">📅 Planning</div>
   <div class="tab" onclick="showPage('p2',this)">👷 Vue Équipe</div>
+  <div class="tab" onclick="showPage('p3',this)">🤝 Catherine</div>
 </div>
 
 <!-- PAGE PLANNING -->
@@ -261,6 +280,24 @@ header{background:var(--nuit);padding:10px 20px;display:flex;align-items:center;
   </div>
   <div class="wgrid" id="wgrid"></div>
   <div class="wsum" id="wsum"></div>
+</div>
+
+<!-- PAGE CATHERINE -->
+<div id="p3" class="page">
+  <div class="wh">
+    <div class="nav-arr"><button class="ab" onclick="navCat(-1)">‹</button><button class="ab" onclick="navCat(1)">›</button></div>
+    <div class="wlabel" id="catLabel">—</div>
+    <button class="tbtn" onclick="goCatToday()">Ce mois-ci</button>
+    <div style="font-size:.72rem;color:var(--text2)">🤝 Catherine ENGELRELST · renfort de Sophie, journées partagées 50/50</div>
+    <button class="btn-wa" onclick="exportPDFCatherine()">📄 Récap PDF du mois</button>
+  </div>
+  <div class="legend" style="margin:0 16px;padding:8px 0">
+    <div class="li"><div class="ld" style="background:var(--bord)"></div>Journée partagée avec Catherine</div>
+    <div class="li"><div class="ld" style="background:#e0d8c8"></div>Journée normale (cliquer pour marquer)</div>
+    <div class="li"><div class="ld" style="background:#bbb"></div>Verrouillé (avant juillet 2026)</div>
+  </div>
+  <div id="catGrid" class="cat-grid"></div>
+  <div class="wsum" id="catSum"></div>
 </div>
 
 <!-- MODAL PLANNING -->
@@ -368,8 +405,11 @@ function lits(p){const r=[];if(p.l160>0)r.push(`${p.l160}×160`);if(p.l140>0)r.p
 
 // ════ ÉTAT ════
 
-const S={start:null,days:35,res:[],men:{},sug:{},wo:0,ww:0,dragData:null,obligOverride:{}};
+const S={start:null,days:35,res:[],men:{},sug:{},wo:0,ww:0,dragData:null,obligOverride:{},cat:{},catView:null};
 const VALID_MEN_KEY=/^(alt|cov|ate|dun|sec|bal|pet|lat|typ|vil|hor|vaz|car)_\d{4}-\d{2}-\d{2}$/;
+const VALID_DATE_KEY=/^\d{4}-\d{2}-\d{2}$/;
+// Journées partagées Sophie / Catherine : saisie rétroactive autorisée uniquement à partir de juillet 2026
+const CAT_MIN_DATE='2026-07-01';
 async function loadMen(){
   try{
     const r=await fetch('/api/men');
@@ -390,6 +430,45 @@ async function saveMen(){
   try{await fetch('/api/men',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(clean)});}
   catch(e){console.warn('saveMen',e);}
 }
+
+// ════ JOURNÉES PARTAGÉES SOPHIE / CATHERINE ════
+async function loadCat(){
+  try{
+    const r=await fetch('/api/catherine-days');
+    if(r.ok){
+      const data=await r.json();
+      Object.entries(data).forEach(([k,v])=>{if(VALID_DATE_KEY.test(k))S.cat[k]=v;});
+    }
+  }catch(e){console.warn('loadCat',e);}
+}
+async function saveCat(){
+  try{await fetch('/api/catherine-days',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(S.cat)});}
+  catch(e){console.warn('saveCat',e);}
+}
+function isCatDay(ds_){return !!(S.cat[ds_]&&S.cat[ds_].active);}
+function toggleCatDay(ds_){
+  if(ds_<CAT_MIN_DATE){toast('⚠ Saisie rétroactive limitée à juillet 2026');return;}
+  const t=new Date().toISOString();
+  const cur=S.cat[ds_];
+  const hist=(cur&&cur.history)||[];
+  if(cur&&cur.active){
+    S.cat[ds_]={active:false,ts:cur.ts,history:[...hist,{action:'off',ts:t}]};
+  } else {
+    S.cat[ds_]={active:true,ts:t,history:[...hist,{action:'on',ts:t}]};
+  }
+  saveCat();
+  renderCat();
+  if(document.getElementById('p2').classList.contains('active'))renderW();
+}
+// Total d'heures de ménage réalisées un jour donné (toutes propriétés confondues)
+function heuresJourTotal(ds_){
+  return Object.values(S.men).filter(m=>m.date===ds_).reduce((s,m)=>s+(PM[m.propId]?.dur||0),0);
+}
+// Part de Sophie ce jour-là (moitié si journée partagée avec Catherine, sinon totalité)
+function sophieHeures(tot,ds_){return isCatDay(ds_)?tot/2:tot;}
+// Part de Catherine ce jour-là (0 si non partagée)
+function catherineHeures(tot,ds_){return isCatDay(ds_)?tot/2:0;}
+function fmtH(n){return Number.isInteger(n)?String(n):n.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');}
 const ds=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),j=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${j}`;};
 const add=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
 const now=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
@@ -634,6 +713,7 @@ async function syncH(){
     setL('Chargement des ménages...');
     await loadMen();
     await loadOverride();
+    await loadCat();
     setL('Génération des suggestions...');
     genSug();
     _rxCache=null;
@@ -1037,6 +1117,7 @@ function renderW(){
     const its=iv.filter(x=>x.date===ds_);
     const we=d.getDay()===0||d.getDay()===6,fe=FERIES.has(ds_),dv=disp(ds_);
     const tot=its.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
+    const catDay=isCatDay(ds_);
     const card=el('div','dc');
     const hdr=el('div','dch');
     const hasConf=its.some(x=>x.conf&&!x.oblig);
@@ -1047,8 +1128,10 @@ function renderW(){
       else if(hasConf)hdr.classList.add('has-conf');
       else hdr.classList.add('has-sug');
     } else if(we||fe) hdr.classList.add('we');
+    if(catDay)hdr.classList.add('has-cat');
     const jn=`${JL[d.getDay()].substring(0,3)} ${d.getDate()}`;
-    hdr.innerHTML=`<span>${jn}</span>${its.length?`<span class="tot">${tot}h</span>`:''}`;
+    const totLabel=its.length?(catDay?`<span class="tot">🤝 ${fmtH(sophieHeures(tot,ds_))}h</span>`:`<span class="tot">${tot}h</span>`):'';
+    hdr.innerHTML=`<span>${jn}</span>${totLabel}`;
     card.appendChild(hdr);
     if(!dv.ok){const e=el('div','de');e.textContent='Repos';card.appendChild(e);}
     else if(its.length===0){const e=el('div','de');e.textContent=we||fe?'Disponible si nécessaire':`Dispo ${hm(dv.s)}–${hm(dv.e)}`;card.appendChild(e);}
@@ -1065,19 +1148,26 @@ function renderW(){
   // Tableau récapitulatif — 7 jours fixes
   const ws=document.getElementById('wsum');
   const tot2=iv.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
-  ws.innerHTML=`<div class="wst"><span>📋 Récapitulatif — ${iv.length} intervention(s) · ${tot2}h</span></div>`;
+  const dayTotalsW={};
+  iv.forEach(x=>{dayTotalsW[x.date]=(dayTotalsW[x.date]||0)+(PM[x.propId]?.dur||0);});
+  const weekSophieTot=Object.entries(dayTotalsW).reduce((s,[d,t])=>s+sophieHeures(t,d),0);
+  const weekHasCat=Object.keys(dayTotalsW).some(d=>isCatDay(d));
+  ws.innerHTML=weekHasCat
+    ?`<div class="wst"><span>📋 Récapitulatif — ${iv.length} intervention(s) · ${tot2}h au total · <strong>${fmtH(weekSophieTot)}h pour Sophie</strong> (renfort Catherine 🤝 certains jours)</span></div>`
+    :`<div class="wst"><span>📋 Récapitulatif — ${iv.length} intervention(s) · ${tot2}h</span></div>`;
   const tbl=el('table','wtbl');
-  tbl.innerHTML='<thead><tr><th>Jour</th><th>Hébergement</th><th>Adresse</th><th>Lits</th><th>SDB</th><th>Durée</th><th>Note</th></tr></thead>';
+  tbl.innerHTML='<thead><tr><th>Jour</th><th>Hébergement</th><th>Adresse</th><th>Lits</th><th>SDB</th><th>Durée</th><th>Renfort</th><th>Note</th></tr></thead>';
   const tb=el('tbody');
   for(let i=0;i<7;i++){
     const d=add(l,i),ds_=ds(d);
     const its=iv.filter(x=>x.date===ds_);
     const dLabel=`${JL[d.getDay()]} ${d.getDate()} ${M[d.getMonth()]}`;
     const we=d.getDay()===0||d.getDay()===6,dv=disp(ds_);
+    const catBadge=isCatDay(ds_)?'<span class="cat-tag">🤝 Catherine</span>':'—';
     if(its.length===0){
       const tr=el('tr','empty-row');
       const status=!dv.ok?'Repos':(we?'Disponible si nécessaire':'Disponible');
-      tr.innerHTML=`<td class="day-cell">${dLabel}</td><td colspan="6"><span class="dot none" style="display:inline-block"></span>${status}</td>`;
+      tr.innerHTML=`<td class="day-cell">${dLabel}</td><td colspan="7"><span class="dot none" style="display:inline-block"></span>${status}</td>`;
       tb.appendChild(tr);
     } else {
       its.forEach((x,idx)=>{
@@ -1087,7 +1177,8 @@ function renderW(){
         const durCls=x.oblig?'oblig':x.conf?'conf':'sug';
         const rowspan=idx===0&&its.length>1?` rowspan="${its.length}"`:'';
         const dayCell=idx===0?`<td class="day-cell"${rowspan} style="vertical-align:middle">${dLabel}</td>`:'';
-        tr.innerHTML=`${dayCell}<td class="prop-cell"><span class="dot ${dotCls}" style="display:inline-block"></span>${p.nom}</td><td style="font-size:11px;color:#666">${p.adr}</td><td class="lits-cell">${lits(p).replace(/, /g,'<br>')}</td><td>${p.sdb}</td><td class="dur-cell ${durCls}">${p.dur}h</td><td style="color:#bbb;font-size:11px">${x.note||'—'}</td>`;
+        const catCell=idx===0?`<td${rowspan} style="vertical-align:middle">${catBadge}</td>`:'';
+        tr.innerHTML=`${dayCell}<td class="prop-cell"><span class="dot ${dotCls}" style="display:inline-block"></span>${p.nom}</td><td style="font-size:11px;color:#666">${p.adr}</td><td class="lits-cell">${lits(p).replace(/, /g,'<br>')}</td><td>${p.sdb}</td><td class="dur-cell ${durCls}">${p.dur}h</td>${catCell}<td style="color:#bbb;font-size:11px">${x.note||'—'}</td>`;
         tb.appendChild(tr);
       });
     }
@@ -1095,6 +1186,78 @@ function renderW(){
   tbl.appendChild(tb);ws.appendChild(tbl);
 }
 
+
+// ════ VUE CATHERINE ════
+function goCatToday(){const t=now();S.catView={y:t.getFullYear(),m:t.getMonth()};renderCat();}
+function navCat(n){
+  if(!S.catView){const t=now();S.catView={y:t.getFullYear(),m:t.getMonth()};}
+  S.catView.m+=n;
+  if(S.catView.m<0){S.catView.m=11;S.catView.y--;}
+  if(S.catView.m>11){S.catView.m=0;S.catView.y++;}
+  renderCat();
+}
+function renderCat(){
+  if(!S.catView){const t=now();S.catView={y:t.getFullYear(),m:t.getMonth()};}
+  const{y,m}=S.catView;
+  document.getElementById('catLabel').textContent=`${M[m]} ${y}`;
+  const first=new Date(y,m,1);
+  const startOff=(first.getDay()+6)%7; // grille Lundi→Dimanche
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const grid=document.getElementById('catGrid');grid.innerHTML='';
+  ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].forEach(d=>{const h=el('div','cat-dh');h.textContent=d;grid.appendChild(h);});
+  for(let i=0;i<startOff;i++)grid.appendChild(el('div','cat-empty'));
+  let monthTotalCat=0,monthTotalSophie=0,monthCount=0;
+  for(let day=1;day<=daysInMonth;day++){
+    const ds_=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const active=isCatDay(ds_);
+    const locked=ds_<CAT_MIN_DATE;
+    const tot=heuresJourTotal(ds_);
+    const cell=el('div','cat-day'+(active?' active':'')+(locked?' locked':''));
+    cell.innerHTML=`<span class="cat-num">${day}</span>${active?`<span class="cat-tag2">🤝 ${fmtH(tot/2)}h</span>`:''}`;
+    if(!locked)cell.onclick=()=>toggleCatDay(ds_);
+    else cell.title='Saisie rétroactive limitée à juillet 2026';
+    grid.appendChild(cell);
+    if(active){monthTotalCat+=tot/2;monthTotalSophie+=tot/2;monthCount++;}
+  }
+  const sum=document.getElementById('catSum');
+  sum.innerHTML=`<div class="wst"><span>🤝 ${monthCount} journée(s) partagée(s) ce mois-ci · ${fmtH(monthTotalCat)}h pour Catherine · ${fmtH(monthTotalSophie)}h retirés du compteur de Sophie</span></div>`;
+}
+function exportPDFCatherine(){
+  const view=S.catView||(()=>{const t=now();return{y:t.getFullYear(),m:t.getMonth()};})();
+  const{y,m}=view;
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const rows=[];
+  for(let day=1;day<=daysInMonth;day++){
+    const ds_=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    if(!isCatDay(ds_))continue;
+    const tot=heuresJourTotal(ds_);
+    rows.push({ds_,d:new Date(ds_+'T00:00:00'),h:tot/2});
+  }
+  if(!rows.length){toast('⚠ Aucune journée partagée avec Catherine ce mois-ci');return;}
+  const totG=rows.reduce((s,r)=>s+r.h,0);
+  const mName=M[m]+' '+y;
+  const dateGen=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  const lignes=rows.map((r,i)=>{
+    const bg=i%2===0?'#f8f5ee':'#fff';
+    return '<tr style="background:'+bg+'"><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;font-weight:700">'+String(r.d.getDate()).padStart(2,'0')+'/'+String(r.d.getMonth()+1).padStart(2,'0')+'/'+r.d.getFullYear()+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0">'+JL[r.d.getDay()]+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;text-align:center;font-weight:700;color:#27AE60">'+fmtH(r.h)+'h</td></tr>';
+  }).join('');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recapitulatif Catherine</title><style>body{font-family:sans-serif;margin:0;padding:32px 40px;color:#17232F;font-size:12px}@page{margin:20mm 15mm;size:A4}</style></head><body>'+
+    '<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;border-bottom:3px solid #8D1733;padding-bottom:16px">'+
+    '<div style="width:52px;height:52px;background:#8D1733;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#E7D8B5;font-family:Georgia,serif">S</div>'+
+    '<div><div style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:#17232F">SÉRÉNISSIME CONCIERGERIE</div>'+
+    '<div style="font-size:12px;color:#666;margin-top:2px">Récapitulatif des heures — Catherine ENGELRELST — '+mName+'</div>'+
+    '<div style="font-size:11px;color:#999;margin-top:1px">Généré le '+dateGen+'</div></div></div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#17232F;color:#E7D8B5"><th style="padding:7px 10px;text-align:left">Date</th><th style="padding:7px 10px;text-align:left">Jour</th><th style="padding:7px 10px;text-align:center">Heures</th></tr></thead><tbody>'+
+    lignes+'</tbody></table>'+
+    '<div style="margin-top:24px;background:#17232F;color:#E7D8B5;padding:12px 16px;border-radius:6px;display:flex;justify-content:space-between">'+
+    '<span style="font-family:Georgia,serif;font-size:14px;font-weight:700">TOTAL '+mName.toUpperCase()+'</span>'+
+    '<span style="font-size:14px;font-weight:700">'+rows.length+' journée(s) · '+fmtH(totG)+'h</span></div>'+
+    '</body></html>';
+  const win=window.open('','_blank');
+  win.document.write(html);win.document.close();win.focus();
+  setTimeout(()=>win.print(),600);
+  toast('PDF Catherine généré — '+rows.length+' journée(s)');
+}
 
 // ════ WHATSAPP ════
 function buildWAMsg(weekOffset=S.ww){
@@ -1104,7 +1267,9 @@ function buildWAMsg(weekOffset=S.ww){
   let msg=`*SÉRÉNISSIME CONCIERGERIE*\nPlanning Sophie – Sem. du ${l.getDate()} ${MC[l.getMonth()]}\n${'─'.repeat(32)}\n\n`;
   Object.entries(pj).sort().forEach(([d,its])=>{
     const dt=new Date(d+'T00:00:00');
-    msg+=`_*${JL[dt.getDay()].toUpperCase()} ${dt.getDate()} ${M[dt.getMonth()].toUpperCase()}*_\n\n`;
+    msg+=`_*${JL[dt.getDay()].toUpperCase()} ${dt.getDate()} ${M[dt.getMonth()].toUpperCase()}*_`;
+    if(isCatDay(d))msg+=` 🤝 _renfort Catherine_`;
+    msg+='\n\n';
     its.forEach(x=>{
       const p=PM[x.propId];if(!p)return;
       msg+=`*${p.nom}*\n${p.adr}\nDurée : ${p.dur}h · ${p.cap} pers.\n${lits(p)} · ${p.sdb} SDB\n`;
@@ -1113,7 +1278,11 @@ function buildWAMsg(weekOffset=S.ww){
     });
   });
   const tot=iv.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
-  msg+=`${'─'.repeat(32)}\n${iv.length} intervention(s) · ${tot}h\nBonne journée Sophie !`;
+  const dayTotalsWA={};
+  iv.forEach(x=>{dayTotalsWA[x.date]=(dayTotalsWA[x.date]||0)+(PM[x.propId]?.dur||0);});
+  const totSophie=Object.entries(dayTotalsWA).reduce((s,[d,t])=>s+sophieHeures(t,d),0);
+  const hasCatWeek=Object.keys(dayTotalsWA).some(d=>isCatDay(d));
+  msg+=`${'─'.repeat(32)}\n${iv.length} intervention(s) · ${hasCatWeek?fmtH(totSophie)+'h pour Sophie (renfort Catherine certains jours)':tot+'h'}\nBonne journée Sophie !`;
   return msg;
 }
 function renderWA(){} // désactivé - onglet WhatsApp supprimé
@@ -1187,15 +1356,21 @@ function exportPDF(){
   Object.entries(mois).sort().forEach(([mo,ms])=>{
     const [y,m_]=mo.split('-');
     const mName=M[parseInt(m_)-1]+' '+y;
-    const totH=ms.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
+    // Total Sophie : les journées partagées avec Catherine ne comptent que pour moitié
+    const dayTotalsM={};
+    ms.forEach(x=>{dayTotalsM[x.date]=(dayTotalsM[x.date]||0)+(PM[x.propId]?.dur||0);});
+    const totH=Object.entries(dayTotalsM).reduce((s,[d,t])=>s+sophieHeures(t,d),0);
     lignes.push('<div style="page-break-inside:avoid;margin-bottom:28px"><h2 style="font-family:Georgia,serif;font-size:15px;color:#8D1733;border-bottom:2px solid #8D1733;padding-bottom:6px;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">'+mName+'</h2><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#17232F;color:#E7D8B5"><th style="padding:7px 10px;text-align:left">Hébergement</th><th style="padding:7px 10px;text-align:left">Date</th><th style="padding:7px 10px;text-align:left">Jour</th><th style="padding:7px 10px;text-align:center">Durée</th><th style="padding:7px 10px;text-align:left">Note</th></tr></thead><tbody>'+
       ms.map((m,i)=>{
         const d=new Date(m.date+'T00:00:00');const p=PM[m.propId];const bg=i%2===0?'#f8f5ee':'#fff';
-        return '<tr style="background:'+bg+'"><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;font-weight:700">'+(p?.nom||m.propName)+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0">'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0">'+JL[d.getDay()]+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;text-align:center;font-weight:700;color:#27AE60">'+(p?.dur||'?')+'h</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;color:#666;font-size:11px">'+(m.note||'—')+'</td></tr>';
+        const catTag=isCatDay(m.date)?' <span style="color:#8D1733;font-weight:700">🤝</span>':'';
+        return '<tr style="background:'+bg+'"><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;font-weight:700">'+(p?.nom||m.propName)+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0">'+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear()+catTag+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0">'+JL[d.getDay()]+'</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;text-align:center;font-weight:700;color:#27AE60">'+(p?.dur||'?')+'h</td><td style="padding:6px 10px;border-bottom:1px solid #ede5d0;color:#666;font-size:11px">'+(m.note||'—')+'</td></tr>';
       }).join('')+
-      '<tr style="background:#E7D8B5;font-weight:700"><td style="padding:7px 10px" colspan="3">TOTAL '+mName+'</td><td style="padding:7px 10px;text-align:center;color:#8D1733">'+totH+'h</td><td style="padding:7px 10px">'+ms.length+' intervention(s)</td></tr></tbody></table></div>');
+      '<tr style="background:#E7D8B5;font-weight:700"><td style="padding:7px 10px" colspan="3">TOTAL '+mName+' (Sophie)</td><td style="padding:7px 10px;text-align:center;color:#8D1733">'+fmtH(totH)+'h</td><td style="padding:7px 10px">'+ms.length+' intervention(s)</td></tr></tbody></table></div>');
   });
-  const totG=entries.reduce((s,x)=>s+(PM[x.propId]?.dur||0),0);
+  const dayTotalsG={};
+  entries.forEach(x=>{dayTotalsG[x.date]=(dayTotalsG[x.date]||0)+(PM[x.propId]?.dur||0);});
+  const totG=Object.entries(dayTotalsG).reduce((s,[d,t])=>s+sophieHeures(t,d),0);
   const dateGen=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
   const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recapitulatif Serenissime</title><style>body{font-family:sans-serif;margin:0;padding:32px 40px;color:#17232F;font-size:12px}@page{margin:20mm 15mm;size:A4}</style></head><body>'+
     '<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;border-bottom:3px solid #8D1733;padding-bottom:16px">'+
@@ -1205,8 +1380,9 @@ function exportPDF(){
     '<div style="font-size:11px;color:#999;margin-top:1px">Généré le '+dateGen+'</div></div></div>'+
     lignes.join('')+
     '<div style="margin-top:24px;background:#17232F;color:#E7D8B5;padding:12px 16px;border-radius:6px;display:flex;justify-content:space-between">'+
-    '<span style="font-family:Georgia,serif;font-size:14px;font-weight:700">TOTAL GÉNÉRAL</span>'+
-    '<span style="font-size:14px;font-weight:700">'+entries.length+' intervention(s) · '+totG+'h</span></div>'+
+    '<span style="font-family:Georgia,serif;font-size:14px;font-weight:700">TOTAL GÉNÉRAL (Sophie)</span>'+
+    '<span style="font-size:14px;font-weight:700">'+entries.length+' intervention(s) · '+fmtH(totG)+'h</span></div>'+
+    '<div style="margin-top:10px;font-size:10px;color:#999">🤝 = journée en renfort avec Catherine ENGELRELST — heures partagées 50/50 entre Sophie et Catherine</div>'+
     '</body></html>';
   const win=window.open('','_blank');
   win.document.write(html);win.document.close();win.focus();
@@ -1220,6 +1396,7 @@ function showPage(id,t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.getElementById(id).classList.add('active');t.classList.add('active');
   if(id==='p2')renderW();
+  if(id==='p3')renderCat();
 }
 
 // ════ UI ════
@@ -1231,6 +1408,15 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 document.getElementById('es').style.display='flex';
 
 document.getElementById('es').style.display='flex';
+
+// Chargement initial (indépendant de la synchronisation Hostify) pour que
+// l'onglet Catherine soit utilisable dès l'ouverture de la page.
+(async function boot(){
+  await loadMen();
+  await loadOverride();
+  await loadCat();
+  goCatToday();
+})();
 </script>
 </body>
 </html>
