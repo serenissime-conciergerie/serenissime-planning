@@ -25,6 +25,18 @@ export default {
         return new Response('{"ok":true}', {headers:{'Content-Type':'application/json'}});
       }
     }
+    if(url.pathname === '/api/catherine-days') {
+      if(!env.MEN_KV) return new Response('{"error":"KV not bound"}', {status:500,headers:{'Content-Type':'application/json'}});
+      if(request.method === 'GET') {
+        const data = await env.MEN_KV.get('catherineDays');
+        return new Response(data || '{}', {headers:{'Content-Type':'application/json'}});
+      }
+      if(request.method === 'POST') {
+        const body = await request.text();
+        await env.MEN_KV.put('catherineDays', body);
+        return new Response('{"ok":true}', {headers:{'Content-Type':'application/json'}});
+      }
+    }
     return env.ASSETS.fetch(request);
   }
 };
